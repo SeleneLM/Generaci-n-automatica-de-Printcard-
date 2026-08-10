@@ -1,0 +1,2063 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zubex — Captura DataCard</title>
+<style>
+  :root{
+    --azul-zubex: #1b3a7a;
+    --azul-oscuro: #102554;
+    --gris-fondo: #f4f6fa;
+    --blanco: #ffffff;
+    --borde: #d7dce5;
+    --texto: #1f2733;
+    --texto-suave: #6b7585;
+    --acento: #e8a93c;
+    --error: #c0392b;
+    --ok: #2f8f5b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--gris-fondo);
+    color: var(--texto);
+  }
+  .topbar{
+    background: var(--azul-oscuro);
+    color: white;
+    padding: 18px 32px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .topbar .brand{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .topbar .logo{
+    font-weight:800;
+    font-size:22px;
+    letter-spacing:0.5px;
+  }
+  .topbar .subtitle{
+    font-size:13px;
+    color:#aebcdd;
+  }
+  .topbar .step-indicator{
+    font-size:13px;
+    color:#aebcdd;
+    background: rgba(255,255,255,0.08);
+    padding:6px 14px;
+    border-radius:20px;
+  }
+  .container{
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+  }
+  .intro{
+    margin-bottom:28px;
+  }
+  .intro h1{
+    font-size:24px;
+    margin:0 0 6px;
+    color: var(--azul-oscuro);
+  }
+  .intro p{
+    margin:0;
+    color: var(--texto-suave);
+    font-size:14px;
+  }
+  .card{
+    background: var(--blanco);
+    border-radius: 12px;
+    border: 1px solid var(--borde);
+    margin-bottom: 22px;
+    overflow:hidden;
+  }
+  .card-header{
+    background: linear-gradient(90deg, var(--azul-zubex), var(--azul-oscuro));
+    color: white;
+    padding: 14px 22px;
+    font-size: 15px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .card-header .num{
+    background: rgba(255,255,255,0.2);
+    width:22px;height:22px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;
+  }
+  .card-body{
+    padding: 22px;
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 20px;
+  }
+  .card-body.single{
+    grid-template-columns: 1fr;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .field.full{
+    grid-column: 1 / -1;
+  }
+  label{
+    font-size:13px;
+    font-weight:600;
+    color: var(--texto);
+  }
+  label .req{
+    color: var(--error);
+    margin-left:3px;
+  }
+  label .opt{
+    color: var(--texto-suave);
+    font-weight:400;
+    font-size:12px;
+    margin-left:4px;
+  }
+  .hint{
+    font-size:12px;
+    color: var(--texto-suave);
+    margin-top:2px;
+  }
+  select, input[type=text], input[type=date]{
+    padding: 10px 12px;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--blanco);
+    color: var(--texto);
+    font-family: inherit;
+  }
+  select:focus, input:focus{
+    outline: none;
+    border-color: var(--azul-zubex);
+    box-shadow: 0 0 0 3px rgba(27,58,122,0.12);
+  }
+  select.disabled, input.disabled{
+    background: #eef0f4;
+    color: var(--texto-suave);
+    cursor:not-allowed;
+  }
+  .radio-group{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .radio-pill{
+    border: 1px solid var(--borde);
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 13px;
+    cursor:pointer;
+    user-select:none;
+    transition: all 0.15s;
+  }
+  .radio-pill:hover{
+    border-color: var(--azul-zubex);
+  }
+  .radio-pill.selected{
+    background: var(--azul-zubex);
+    color:white;
+    border-color: var(--azul-zubex);
+  }
+  .check-grid{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .check-pill{
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    cursor:pointer;
+    user-select:none;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    transition: all 0.15s;
+  }
+  .check-pill:hover{
+    border-color: var(--azul-zubex);
+  }
+  .check-pill.selected{
+    background: #eaf0fb;
+    border-color: var(--azul-zubex);
+    color: var(--azul-oscuro);
+    font-weight:600;
+  }
+  .badge-na{
+    display:inline-block;
+    background:#eef0f4;
+    color: var(--texto-suave);
+    font-size:11px;
+    padding:3px 8px;
+    border-radius:6px;
+    margin-top:4px;
+    width:fit-content;
+  }
+  .footer-bar{
+    position:fixed;
+    bottom:0;left:0;right:0;
+    background: var(--blanco);
+    border-top: 1px solid var(--borde);
+    padding: 14px 32px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .footer-bar .status{
+    font-size:13px;
+    color: var(--texto-suave);
+  }
+  .footer-bar .status strong{
+    color: var(--ok);
+  }
+  .btn-primary{
+    background: var(--azul-zubex);
+    color:white;
+    border:none;
+    padding:12px 26px;
+    border-radius:8px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover{
+    background: var(--azul-oscuro);
+  }
+  .btn-primary:disabled{
+    background:#b6bdca;
+    cursor:not-allowed;
+  }
+  .mockup-flag{
+    background: var(--acento);
+    color: var(--azul-oscuro);
+    font-size: 11px;
+    font-weight:700;
+    padding: 3px 10px;
+    border-radius: 5px;
+    letter-spacing:0.5px;
+  }
+  .tintas-list{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-bottom:8px;
+  }
+  .tinta-row{
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  .tinta-row select{
+    flex:1;
+  }
+  .tinta-row .remove-tinta{
+    background:#fbeaea;
+    color: var(--error);
+    border:none;
+    width:32px;height:32px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:14px;
+    flex-shrink:0;
+  }
+  .tinta-row .remove-tinta:hover{
+    background:#f6d5d5;
+  }
+  .btn-add-tinta{
+    background: #eaf0fb;
+    color: var(--azul-zubex);
+    border: 1px dashed var(--azul-zubex);
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight:600;
+    cursor:pointer;
+    align-self:flex-start;
+  }
+  .btn-add-tinta:hover{
+    background:#dde8f8;
+  }
+  .btn-add-tinta:disabled{
+    opacity:0.5;
+    cursor:not-allowed;
+  }
+
+.screen { display: none; }
+.screen.active { display: block; }
+#screen-printcard { background:#e8eaed; min-height:100vh; padding:0; }
+.pc-topbar { background:#102554; color:white; padding:14px 32px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
+.pc-topbar .t { font-size:14px; font-weight:600; }
+.pc-topbar .s { font-size:12px; color:#aebcdd; }
+.pc-pages { padding:40px; display:flex; flex-direction:column; align-items:center; gap:40px; }
+.pc-label { font-size:13px; font-weight:600; color:#6b7585; text-align:center; margin-bottom:-28px; font-family:'Archivo',sans-serif; }
+.btn-back { background:rgba(255,255,255,.1); color:white; border:1px solid rgba(255,255,255,.2); border-radius:8px; padding:8px 18px; font-size:13px; cursor:pointer; font-family:inherit; }
+.btn-back:hover { background:rgba(255,255,255,.2); }
+.btn-dl { background:#e8a93c; color:#102554; border:none; border-radius:8px; padding:8px 18px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+.btn-dl:hover { background:#f5ba4a; }
+image-slot { display:block; background:#eef0f4; border-radius:6px; border:1.5px dashed #c7ccd6; min-height:48px; }
+#screen-formulario { display: block; }
+
+/* ── PANTALLA DE INICIO ── */
+#screen-inicio .topbar-inicio {
+  background: var(--azul-oscuro);
+  color: white;
+  padding: 18px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.btn-nuevo {
+  background: var(--acento);
+  color: var(--azul-oscuro);
+  border: none;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.btn-nuevo:hover { background: #f5ba4a; }
+.capturas-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+}
+.capturas-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+.capturas-header h1 {
+  font-size: 22px;
+  margin: 0 0 4px;
+  color: var(--azul-oscuro);
+}
+.capturas-header p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--texto-suave);
+}
+.capturas-table-wrap {
+  background: var(--blanco);
+  border-radius: 12px;
+  border: 1px solid var(--borde);
+  overflow: hidden;
+}
+.capturas-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.capturas-table thead th {
+  background: linear-gradient(90deg, var(--azul-zubex), var(--azul-oscuro));
+  color: white;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.capturas-table tbody tr {
+  border-bottom: 1px solid var(--borde);
+  transition: background 0.1s;
+}
+.capturas-table tbody tr:last-child { border-bottom: none; }
+.capturas-table tbody tr:hover { background: #f7f9fc; }
+.capturas-table td {
+  padding: 13px 16px;
+  color: var(--texto);
+  vertical-align: middle;
+}
+.td-cliente { font-weight: 700; }
+.td-consec { font-family: monospace; font-size: 12px; color: var(--azul-zubex); }
+.td-pdfs {
+  text-align: center;
+  white-space: nowrap;
+}
+.btn-pdf-icon {
+  background: none;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--azul-zubex);
+  transition: background 0.12s, border-color 0.12s;
+  margin: 0 2px;
+}
+.btn-pdf-icon:hover { background: #eaf0fb; border-color: var(--azul-zubex); }
+.td-revisado { text-align: center; }
+.revisado-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--borde);
+  cursor: pointer;
+  background: var(--blanco);
+  transition: all 0.15s;
+  font-size: 14px;
+  color: transparent;
+}
+.revisado-toggle:hover { border-color: var(--ok); background: #f0faf4; }
+.revisado-toggle.marcado {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: white;
+}
+.btn-accion:disabled { opacity: 0.5; cursor: not-allowed; }
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--texto-suave);
+}
+.empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+.empty-state p { margin: 4px 0; font-size: 14px; }
+.api-banner {
+  background: #fff8e6;
+  border: 1px solid #f5c46a;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: #7a5200;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.api-banner.error {
+  background: #fff0f0;
+  border-color: #f5a0a0;
+  color: #8a1e1e;
+}
+.api-banner.ok {
+  background: #e6f4ed;
+  border-color: #84d4a8;
+  color: #1e5c35;
+}
+.spinner-inline {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid #aaa;
+  border-top-color: var(--azul-zubex);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+<!-- ══════════════════════════════════════════════
+     PANTALLA 0: INICIO — LISTA DE CAPTURAS
+     ══════════════════════════════════════════════ -->
+<div id="screen-inicio" class="screen active">
+  <div class="topbar-inicio">
+    <div class="brand">
+      <div class="logo">zubex</div>
+      <div class="subtitle">Sistema de Capturas · Preprensa</div>
+    </div>
+    <button class="btn-nuevo" onclick="irANuevaCaptura()">+ Nueva Captura</button>
+  </div>
+
+  <div class="capturas-container">
+    <div class="capturas-header">
+      <div>
+        <h1>Capturas DataCard</h1>
+        <p>Historial de documentos generados por Comercial</p>
+      </div>
+      <button class="btn-primary" onclick="cargarCapturas()" style="font-size:13px;padding:9px 18px;">↻ Actualizar</button>
+    </div>
+
+    <div id="api-status-banner" class="api-banner" style="display:none;"></div>
+
+    <div class="capturas-table-wrap">
+      <table class="capturas-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Cliente</th>
+            <th>Consecutivo</th>
+            <th>Asesor</th>
+            <th style="text-align:center;">PDFs</th>
+            <th style="text-align:center;">Revisado</th>
+          </tr>
+        </thead>
+        <tbody id="capturas-tbody">
+          <tr><td colspan="6">
+            <div class="empty-state">
+              <div class="icon"><span class="spinner-inline"></span></div>
+              <p>Cargando capturas...</p>
+            </div>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PANTALLA 1: FORMULARIO
+     ══════════════════════════════════════════════ -->
+<div id="screen-formulario" class="screen">
+
+<div class="topbar">
+  <div class="brand">
+    <div class="logo">zubex</div>
+    <div class="subtitle">Captura de DataCard · Comercial</div>
+  </div>
+  <div style="display:flex; gap:10px; align-items:center;">
+    <button class="btn-back" onclick="mostrarPantalla('screen-inicio')">← Capturas</button>
+    <span class="step-indicator" id="progress-label">0 / 16 campos</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="intro">
+    <h1>Nuevo DataCard</h1>
+    <p>Llena todos los campos. Los marcados con <strong style="color:#c0392b">*</strong> son obligatorios. Algunos campos cambian según el material que selecciones.</p>
+  </div>
+
+  <!-- INFORMACIÓN GENERAL -->
+  <div class="card">
+    <div class="card-header"><span class="num">1</span> Información general</div>
+    <div class="card-body">
+      <div class="field">
+        <label>Fecha</label>
+        <input type="text" id="fecha-hoy" readonly style="background:#f0f6ff;border-color:#b5d4f4;color:#1b3a7a;font-weight:600;">
+        <div class="hint">Se genera automáticamente al abrir el formulario</div>
+      </div>
+
+      <div class="field">
+        <label>Zona<span class="req">*</span></label>
+        <select id="zona" onchange="markFilled(this)">
+          <option value="">Selecciona...</option>
+          <option>AGS</option>
+          <option>CHI</option>
+          <option>CORP</option>
+          <option>EXP</option>
+          <option>GDL</option>
+          <option>HER</option>
+          <option>MEX</option>
+          <option>MTY</option>
+          <option>QRO</option>
+          <option>TOR</option>
+          <option>YUC</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Asesor comercial<span class="req">*</span></label>
+        <select id="select-asesor" onchange="markFilled(this)">
+          <option value="">Selecciona...</option>
+          <option>Adriana Robles</option>
+          <option>Alberto Zuñiga</option>
+          <option>Alejandro Hdz</option>
+          <option>Alfredo Najar</option>
+          <option>Alma Patiño</option>
+          <option>Araceli de Alba</option>
+          <option>Armando Ayala</option>
+          <option>Asiel Vázquez</option>
+          <option>Carlos Ramírez</option>
+          <option>Erick Rodríguez</option>
+          <option>Fariva Rodríguez</option>
+          <option>Iván Díaz</option>
+          <option>Leonardo Guzmán</option>
+          <option>LuzMa Gaytán</option>
+          <option>Norma Silva</option>
+          <option>Rafael Mijangos</option>
+          <option>Tanya Ríos</option>
+          <option>Vanesa Silva</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Cliente / Prospecto<span class="req">*</span></label>
+        <input type="text" id="cliente" placeholder="Ej. Montecarlo" onchange="markFilled(this)">
+      </div>
+
+      <div class="field">
+        <label>Código interno cliente <span class="opt">(opcional, N/A si no aplica)</span></label>
+        <input type="text" id="codigo-interno" placeholder="N/A" onchange="markFilled(this)">
+      </div>
+
+      <div class="field">
+        <label>Producto<span class="req">*</span></label>
+        <select id="producto" onchange="toggleProductoLibre(this); markFilled(this)">
+          <option value="">Selecciona...</option>
+          <option>Chorizo</option>
+          <option>Chuleta</option>
+          <option>Genérico</option>
+          <option>Jamón</option>
+          <option>Jamón de Pavo</option>
+          <option>Jamón de Pierna</option>
+          <option>Molida</option>
+          <option>Paté</option>
+          <option>Pavo</option>
+          <option>Pierna</option>
+          <option>Pollo</option>
+          <option>Queso de puerco</option>
+          <option>Salami</option>
+          <option>Salchichón</option>
+          <option>Tocino</option>
+          <option value="otro">Otro (escribir)</option>
+        </select>
+        <input type="text" id="producto-libre" placeholder="Especifica el producto" style="display:none; margin-top:6px;">
+      </div>
+
+      <div class="field">
+        <label>Planta TIF<span class="req">*</span></label>
+        <input type="text" id="planta-tif" placeholder="Ej. 596" onchange="markFilled(this)">
+      </div>
+
+      <div class="field">
+        <label>Consecutivo <span class="opt">(escribir si ya se cuenta con él)</span></label>
+        <input type="text" id="consecutivo" placeholder="Ej. MTY-639-PP" onchange="markFilled(this)">
+        <div class="hint">Agregar si ya se cuenta con el (ejemplo: MTY-639-PP)</div>
+      </div>
+
+      <div class="field">
+        <label>Igualar diseño a código o consecutivo <span class="opt">(N/A si no aplica)</span></label>
+        <input type="text" id="igualar" placeholder="Ej. TOR-014-09" onchange="markFilled(this)">
+      </div>
+
+      <div class="field">
+        <label>Código único y versión<span class="req">*</span></label>
+        <input type="text" id="codigo-unico" placeholder="Ej. 30-101003-13078-02" onchange="markFilled(this)">
+      </div>
+
+      <div class="field full">
+        <label>¿Diseño sustituye existente?<span class="req">*</span></label>
+        <div class="radio-group">
+          <div class="radio-pill" onclick="selectPill(this,'sustituye')">Sí</div>
+          <div class="radio-pill selected" onclick="selectPill(this,'sustituye')">No</div>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>Tipo de trabajo<span class="req">*</span> <span class="opt">(puede seleccionar varios, salvo donde se indica)</span></label>
+        <div class="check-grid">
+          <div class="check-pill" data-group="creacion" onclick="toggleExclusivePill(this)">Nuevo</div>
+          <div class="check-pill" data-group="creacion" onclick="toggleExclusivePill(this)">Cambio NO afecta diseño</div>
+          <div class="check-pill selected" data-group="creacion" onclick="toggleExclusivePill(this)">Cambio en diseño</div>
+          <div class="check-pill" onclick="togglePill(this)">Muestra</div>
+          <div class="check-pill" onclick="togglePill(this)">Desarrollo</div>
+          <div class="check-pill" onclick="togglePill(this)">Cliente cuenta con muestra</div>
+          <div class="check-pill" onclick="togglePill(this)">Barniz</div>
+          <div class="check-pill" onclick="togglePill(this)">Reverso solo barniz</div>
+          <div class="check-pill" onclick="togglePill(this)">Impresión 360</div>
+          <div class="check-pill" onclick="toggleEstandarColor(this)">Estándar de color</div>
+          <div class="check-pill" onclick="togglePill(this)">Confirma visita cliente</div>
+        </div>
+        <div class="hint" id="estandar-hint" style="display:none; margin-top:10px;">
+          <label style="display:block; margin-bottom:4px;">¿Cuántos?</label>
+          <input type="text" id="estandar-cuantos" placeholder="Ej. 3" style="width:120px; padding:8px 10px; border:1px solid var(--borde); border-radius:6px;">
+        </div>
+        <div class="hint" style="margin-top:8px; color:#c0392b;">Nuevo / Cambio NO afecta diseño / Cambio en diseño son mutuamente excluyentes — solo se puede elegir una.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ESPECIFICACIONES -->
+  <div class="card">
+    <div class="card-header"><span class="num">2</span> Especificaciones de producto</div>
+    <div class="card-body">
+
+      <div class="field">
+        <label>Material<span class="req">*</span></label>
+        <select id="material" onchange="onMaterialChange(this)">
+          <option value="">Selecciona...</option>
+          <optgroup label="Fundas">
+            <option>F2410</option>
+            <option>FP2410</option>
+            <option>MEXILON</option>
+            <option>R2175</option>
+            <option>R2275M</option>
+            <option>R2275MR</option>
+            <option>R2275MR4</option>
+            <option>RA275MR</option>
+            <option>RA275R</option>
+            <option>SD2010-NH</option>
+            <option>SD2010N</option>
+            <option>SD2010N-5</option>
+            <option>SD2015</option>
+            <option>SD2015N</option>
+            <option>U8175</option>
+            <option>U8275 M15</option>
+            <option>U8275M</option>
+            <option>Z2000</option>
+            <option>Z2000M</option>
+            <option>Z2000R</option>
+            <option>Z3000</option>
+            <option>Z8000</option>
+            <option>Z8000M</option>
+            <option>Z8000N</option>
+            <option>Z8000P</option>
+          </optgroup>
+          <optgroup label="Bolsas">
+            <option>5CR</option>
+            <option>5CR Pigm.</option>
+            <option>5CR240</option>
+            <option>5CR2408K</option>
+            <option>5CR824NT</option>
+            <option>5CR8NT</option>
+            <option>BST8535</option>
+            <option selected>CX6516</option>
+            <option>CX6516RT</option>
+            <option>CX6520</option>
+            <option>CX6520RT</option>
+            <option>CX7816RT</option>
+            <option>CX7820</option>
+            <option>CX7820RT</option>
+            <option>CX8530</option>
+            <option>CX8530AFRT</option>
+            <option>CX8530RT</option>
+            <option>CX8535</option>
+            <option>CX8535 Rojo</option>
+            <option>CX8535RT</option>
+            <option>CX8545</option>
+            <option>CX8545RT</option>
+            <option>CX8550RT</option>
+            <option>E38NT</option>
+            <option>NT815</option>
+            <option>PCH Bio250</option>
+            <option>PCH815</option>
+          </optgroup>
+          <optgroup label="Fundas biodegradables">
+            <option>ZOX609</option>
+            <option>ZOX613</option>
+            <option>ZOX8000</option>
+            <option>ZOXP8000</option>
+            <option>ZOXR175</option>
+            <option>ZOXR175M</option>
+            <option>ZOXR2275 MR4</option>
+            <option>ZOXU820M</option>
+            <option>ZOXU875</option>
+            <option>ZOXU875M</option>
+            <option>ZOXU875M10</option>
+            <option>ZOXU875M4</option>
+          </optgroup>
+          <optgroup label="Bolsas biodegradables">
+            <option>ZOX6516RT</option>
+            <option>ZOX6520</option>
+            <option>ZOX6520RT</option>
+            <option>ZOX7620</option>
+            <option>ZOX7816RT</option>
+            <option>ZOX7820RT</option>
+            <option>ZOX8530RT</option>
+            <option>ZOX8535RT</option>
+            <option>ZOX8545RT</option>
+            <option>ZOX8620</option>
+            <option>ZOXNT168</option>
+            <option>ZOXPCH300</option>
+          </optgroup>
+        </select>
+        <div class="hint" id="material-tipo-hint">Tipo detectado: <strong>Bolsa</strong></div>
+      </div>
+
+      <div class="field">
+        <label>Color<span class="req">*</span></label>
+        <select id="color" onchange="toggleColorLibre(this); markFilled(this)">
+          <option value="">Selecciona...</option>
+          <option selected>CLARO</option>
+          <option>BLANCO</option>
+          <option>ROJO</option>
+          <option>MARRÓN</option>
+          <option>NEGRO</option>
+          <option>AMARILLO</option>
+          <option>DORADO</option>
+          <option>ORO</option>
+          <option value="otro">Otro (escribir)</option>
+        </select>
+        <input type="text" id="color-libre" placeholder="Especifica el color" style="display:none; margin-top:6px;">
+      </div>
+
+      <div class="field">
+        <label>Ancho<span class="req">*</span></label>
+        <div style="display:flex; gap:8px;">
+          <input type="text" placeholder="Ej. 8" style="flex:1" onchange="markFilled(this)">
+          <select style="width:90px" onchange="markFilled(this)">
+            <option>pulg</option>
+            <option>mm</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field" id="largo-field">
+        <label>Largo<span class="req">*</span></label>
+        <div style="display:flex; gap:8px;">
+          <input type="text" placeholder="Ej. 10" style="flex:1" onchange="markFilled(this)">
+          <select style="width:90px" onchange="markFilled(this)">
+            <option>pulg</option>
+            <option>mm</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Código de barras <span class="opt">(escribir N/A si no aplica)</span></label>
+        <input type="text" placeholder="N/A" onchange="markFilled(this)">
+      </div>
+
+      <div class="field">
+        <label>Presentación<span class="req">*</span></label>
+        <select id="presentacion" onchange="onPresentacionChange(this); markFilled(this)">
+          <option value="">Selecciona...</option>
+          <option>Metros (bobina)</option>
+          <option selected>Millares (bolsa)</option>
+          <option>Bol Roll</option>
+          <option>Bolsa Encintada</option>
+          <option>Stick Mts Corr</option>
+          <option>Stick Mill Mts Corr</option>
+        </select>
+      </div>
+
+      <div class="field full" id="presentacion-extra" style="display:none;"></div>
+
+      <div class="field">
+        <label>Tipo de sello<span class="req">*</span></label>
+        <select id="sello" onchange="markFilled(this)">
+          <option value="">Selecciona...</option>
+          <option selected>Recto</option>
+          <option>Curvo</option>
+          <option>PCH</option>
+          <option>Laterales</option>
+          <option>N/A</option>
+        </select>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ÁREA IMPRESA -->
+  <div class="card">
+    <div class="card-header"><span class="num">3</span> Área impresa</div>
+    <div class="card-body">
+
+      <div class="field">
+        <label>Tipo de impresión<span class="req">*</span></label>
+        <div class="radio-group">
+          <div class="radio-pill" onclick="selectTipoImpresion(this,'sencilla')">Sencilla</div>
+          <div class="radio-pill selected" onclick="selectTipoImpresion(this,'continua')">Continua</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Registro reverso con frente<span class="req">*</span></label>
+        <div class="radio-group" id="registro-group">
+          <div class="radio-pill selected" onclick="selectRegistro(this,'si')">Sí (sencilla)</div>
+          <div class="radio-pill" onclick="selectRegistro(this,'no')">No (continua)</div>
+          <div class="radio-pill" onclick="selectRegistro(this,'na')">N/A (no lleva reverso)</div>
+        </div>
+      </div>
+
+      <div class="field" id="dsi-frente-field">
+        <label>DSI Frente (distancia sello a impresión)<span class="req">*</span></label>
+        <input type="text" id="dsi-frente-input" placeholder="Ej. 15mm" onchange="markFilled(this)">
+      </div>
+
+      <div class="field" id="dsi-reverso-field">
+        <label>DSI Reverso<span class="req">*</span></label>
+        <input type="text" id="dsi-reverso-input" placeholder="Ej. 15mm" onchange="markFilled(this)">
+      </div>
+
+      <div class="field">
+        <label>Área de impresión Frente</label>
+        <input type="text" placeholder="Ej. 150 x 250 mm" onchange="markFilled(this)">
+      </div>
+
+      <div class="field">
+        <label>Área de impresión Reverso</label>
+        <input type="text" placeholder="Ej. 150 x 250 mm" onchange="markFilled(this)">
+      </div>
+
+      <div class="field full">
+        <label>Tintas — Frente <span class="opt">(máximo 8)</span></label>
+        <div id="tintas-frente" class="tintas-list"></div>
+        <button type="button" class="btn-add-tinta" onclick="agregarTinta('tintas-frente')">+ Agregar tinta</button>
+      </div>
+
+      <div class="field full">
+        <label>Tintas — Reverso <span class="opt">(máximo 8)</span></label>
+        <div id="tintas-reverso" class="tintas-list"></div>
+        <button type="button" class="btn-add-tinta" onclick="agregarTinta('tintas-reverso')">+ Agregar tinta</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- OBSERVACIONES -->
+  <div class="card">
+    <div class="card-header"><span class="num">4</span> Observaciones</div>
+    <div class="card-body single">
+      <div class="field">
+        <label>Observaciones <span class="opt">(opcional)</span></label>
+        <input type="text" placeholder="Ej. Se anexa diseño, cambio en logo..." onchange="markFilled(this)">
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer-bar">
+  <div class="status">Vista previa — <strong>así se vería el formulario</strong>, los campos no se guardan todavía</div>
+  <button class="btn-primary" onclick="validarYGenerarApp()">Generar DataCard →</button>
+</div>
+
+<div id="validacion-modal" style="display:none; position:fixed; inset:0; background:rgba(16,37,84,0.55); z-index:50; align-items:center; justify-content:center;">
+  <div style="background:white; border-radius:12px; padding:26px 28px; max-width:440px; width:90%;">
+    <h3 style="margin:0 0 10px; color:var(--azul-oscuro);">Faltan campos por llenar</h3>
+    <p style="font-size:14px; color:var(--texto-suave); margin:0 0 14px;">
+      Estos campos están vacíos. Complétalos o escribe "N/A" si no aplican — no se puede generar el DataCard con campos en blanco.
+    </p>
+    <ul id="campos-faltantes" style="font-size:13px; color:var(--error); margin:0 0 16px; padding-left:20px;"></ul>
+    <button class="btn-primary" style="width:100%;" onclick="document.getElementById('validacion-modal').style.display='none'">Entendido, voy a completarlos</button>
+  </div>
+</div>
+
+<script>
+function selectPill(el, group){
+  const parent = el.parentElement;
+  parent.querySelectorAll('.radio-pill').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function onPresentacionChange(sel){
+  const extra = document.getElementById('presentacion-extra');
+  const val = sel.value;
+
+  if(val === 'Stick Mts Corr' || val === 'Stick Mill Mts Corr'){
+    extra.style.display = 'block';
+    extra.innerHTML = `
+      <label>Cantidad (metros)<span class="req">*</span></label>
+      <input type="text" id="largo-stick" placeholder="Ej. 150" onchange="markFilled(this)">
+      <div class="hint">Se mostrará como: 150 Mts Corr (sin la palabra Stick)</div>
+    `;
+  } else if(val === 'Bolsa Encintada'){
+    extra.style.display = 'block';
+    extra.innerHTML = `
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px 20px;">
+        <div class="field">
+          <label>Distancia entre cintas<span class="req">*</span></label>
+          <input type="text" placeholder="Captura manual" onchange="markFilled(this)">
+        </div>
+        <div class="field">
+          <label>Distancia entre bolsas<span class="req">*</span></label>
+          <input type="text" placeholder="Captura manual" onchange="markFilled(this)">
+        </div>
+      </div>
+    `;
+  } else {
+    extra.style.display = 'none';
+    extra.innerHTML = '';
+  }
+}
+
+function selectTipoImpresion(el, valor){
+  selectPill(el, 'tipoimp');
+  const dsiInput = document.getElementById('dsi-frente-input');
+  const dsiField = document.getElementById('dsi-frente-field');
+  if(valor === 'continua'){
+    dsiInput.disabled = true;
+    dsiInput.value = '';
+    dsiInput.placeholder = 'N/A — no aplica en impresión continua';
+    dsiInput.classList.add('disabled');
+    dsiField.querySelector('label').innerHTML = 'DSI Frente <span class="badge-na" style="display:inline">N/A</span>';
+  } else {
+    dsiInput.disabled = false;
+    dsiInput.classList.remove('disabled');
+    dsiInput.placeholder = 'Ej. 15mm';
+    dsiField.querySelector('label').innerHTML = 'DSI Frente (distancia sello a impresión)<span class="req">*</span>';
+  }
+}
+function selectRegistro(el, valor){
+  selectPill(el, 'registro');
+  const dsiInput = document.getElementById('dsi-reverso-input');
+  const dsiField = document.getElementById('dsi-reverso-field');
+  if(valor === 'no' || valor === 'na'){
+    dsiInput.disabled = true;
+    dsiInput.value = '';
+    dsiInput.placeholder = 'N/A — no aplica';
+    dsiInput.classList.add('disabled');
+    dsiField.querySelector('label').innerHTML = 'DSI Reverso <span class="badge-na" style="display:inline">N/A</span>';
+  } else {
+    dsiInput.disabled = false;
+    dsiInput.classList.remove('disabled');
+    dsiInput.placeholder = 'Ej. 15mm';
+    dsiField.querySelector('label').innerHTML = 'DSI Reverso<span class="req">*</span>';
+  }
+}
+function togglePill(el){
+  el.classList.toggle('selected');
+}
+function toggleExclusivePill(el){
+  const group = el.dataset.group;
+  const container = el.closest('.check-grid');
+  const wasSelected = el.classList.contains('selected');
+  container.querySelectorAll('[data-group="' + group + '"]').forEach(p => p.classList.remove('selected'));
+  if(!wasSelected){
+    el.classList.add('selected');
+  }
+}
+function toggleEstandarColor(el){
+  togglePill(el);
+  const hint = document.getElementById('estandar-hint');
+  hint.style.display = el.classList.contains('selected') ? 'block' : 'none';
+}
+function toggleProductoLibre(sel){
+  const libre = document.getElementById('producto-libre');
+  libre.style.display = sel.value === 'otro' ? 'block' : 'none';
+}
+function toggleColorLibre(sel){
+  const libre = document.getElementById('color-libre');
+  libre.style.display = sel.value === 'otro' ? 'block' : 'none';
+}
+
+function markFilled(el) { /* visual helper - no requerida */ }
+
+const PANTONE_OPCIONES = ['Cyan','Magenta','Amarillo','Negro','Blanco','Reflex','185C (rojo)','187C (rojo)','485C (rojo)','483C (café)','072C (azul)','3005C (azul)','123C (amarillo)','Otro (escribir)'];
+
+function agregarTinta(listId){
+  const list = document.getElementById(listId);
+  if(list.children.length >= 8){
+    alert('Máximo 8 tintas.');
+    return;
+  }
+  const row = document.createElement('div');
+  row.className = 'tinta-row';
+  const select = document.createElement('select');
+  select.innerHTML = '<option value="">Selecciona color...</option>' +
+    PANTONE_OPCIONES.map(c => '<option>' + c + '</option>').join('');
+  select.onchange = function(){
+    let libre = row.querySelector('.tinta-libre');
+    if(select.value === 'Otro (escribir)'){
+      if(!libre){
+        libre = document.createElement('input');
+        libre.type = 'text';
+        libre.className = 'tinta-libre';
+        libre.placeholder = 'Especifica el color';
+        libre.style.flex = '1';
+        row.insertBefore(libre, row.querySelector('.remove-tinta'));
+      }
+    } else if(libre){
+      libre.remove();
+    }
+  };
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'remove-tinta';
+  removeBtn.innerHTML = '×';
+  removeBtn.onclick = function(){
+    row.remove();
+    updateAddButtons(listId);
+  };
+  row.appendChild(select);
+  row.appendChild(removeBtn);
+  list.appendChild(row);
+  updateAddButtons(listId);
+}
+function updateAddButtons(listId){
+  const list = document.getElementById(listId);
+  const btn = list.nextElementSibling;
+  btn.disabled = list.children.length >= 8;
+}
+function onMaterialChange(sel){
+  const fundas = ['MEXILON','R2175','R2275M','R2275MR','SD2010N','SD2015','U8175','U8275M','Z2000','Z2000M','Z8000','Z8000M','Z8000N','RA275R','RA275MR','R2275MR4','U8275 M15','SD2015N','Z2000R','F2410','FP2410','Z3000','Z8000P','SD2010N-5','SD2010-NH'];
+  const fundasBio = ['ZOXR175','ZOXR175M','ZOXU875','ZOXU875M','ZOX8000','ZOXR2275 MR4','ZOXU875M4','ZOX613','ZOXP8000','ZOXU820M','ZOXU875M10','ZOX609'];
+  const bolsasBio = ['ZOX6516RT','ZOX7816RT','ZOX6520','ZOX8535RT','ZOX6520RT','ZOX7820RT','ZOX8530RT','ZOX8545RT','ZOX8620','ZOX7620','ZOXNT168','ZOXPCH300'];
+  const val = sel.value;
+  const isFunda = fundas.includes(val) || fundasBio.includes(val);
+  const largoField = document.getElementById('largo-field');
+  const hint = document.getElementById('material-tipo-hint');
+
+  let tipo = 'Bolsa';
+  if(fundas.includes(val)) tipo = 'Funda';
+  if(fundasBio.includes(val)) tipo = 'Funda biodegradable';
+  if(bolsasBio.includes(val)) tipo = 'Bolsa biodegradable';
+
+  hint.innerHTML = 'Tipo detectado: <strong>' + tipo + '</strong>';
+
+  if(isFunda){
+    largoField.querySelector('input').disabled = true;
+    largoField.querySelector('input').value = '';
+    largoField.querySelector('input').placeholder = 'N/A — no aplica para fundas';
+    largoField.querySelector('input').classList.add('disabled');
+    largoField.querySelector('label').innerHTML = 'Largo <span class="badge-na" style="display:inline">N/A para fundas</span>';
+  } else {
+    largoField.querySelector('input').disabled = false;
+    largoField.querySelector('input').classList.remove('disabled');
+    largoField.querySelector('input').placeholder = 'Ej. 10';
+    largoField.querySelector('label').innerHTML = 'Largo<span class="req">*</span>';
+  }
+}
+// init
+onMaterialChange(document.getElementById('material'));
+agregarTinta('tintas-frente');
+agregarTinta('tintas-reverso');
+selectTipoImpresion(document.querySelector('[onclick*="continua"]'), 'continua');
+// Cargar capturas al arrancar
+document.addEventListener('DOMContentLoaded', function(){ cargarCapturas(); });
+// Fecha automática
+(function() {
+  const hoy = new Date();
+  const dd = String(hoy.getDate()).padStart(2, '0');
+  const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+  const yyyy = hoy.getFullYear();
+  const el = document.getElementById('fecha-hoy');
+  if (el) el.value = dd + '/' + mm + '/' + yyyy;
+})();
+
+function validarYGenerar(){
+  const faltantes = [];
+  document.querySelectorAll('.card-body .field').forEach(field => {
+    const label = field.querySelector('label');
+    if(!label) return;
+    const isRequired = label.querySelector('.req') !== null;
+    if(!isRequired) return;
+
+    const select = field.querySelector('select');
+    const input = field.querySelector('input[type="text"], input:not([type])');
+
+    if(select){
+      // Campo con desplegable (puede tener un input "Otro" oculto al lado)
+      if(!select.value){
+        faltantes.push(label.textContent.replace('*','').trim());
+      } else if(select.value === 'otro' && input && (!input.value || input.value.trim() === '')){
+        faltantes.push(label.textContent.replace('*','').trim() + ' (especifica el valor de "Otro")');
+      }
+    } else if(input && !input.disabled){
+      if(!input.value || input.value.trim() === ''){
+        faltantes.push(label.textContent.replace('*','').trim());
+      }
+    }
+  });
+
+  if(faltantes.length > 0){
+    const lista = document.getElementById('campos-faltantes');
+    lista.innerHTML = faltantes.map(f => '<li>' + f + '</li>').join('');
+    document.getElementById('validacion-modal').style.display = 'flex';
+  } else {
+    alert('Todos los campos obligatorios están completos. En la versión funcional, aquí se generaría el PDF del DataCard automáticamente.');
+  }
+}
+// ─── CORREOS DE ASESORES ────────────────────────────────────────
+// Completar cuando se tengan todos los correos
+function mostrarPantalla(id) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+  if (id === 'screen-inicio') { cargarCapturas(); }
+}
+function volverFormulario() { mostrarPantalla('screen-formulario'); }
+
+// ─── CONSTRUIR DATOS PARA PRINTCARD ──────────────────────────────
+function construirDataPrintCard() {
+  function gid(id) {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : '';
+  }
+  // Fecha
+  const fecha = gid('fecha-hoy');
+  // Medida
+  const anchoEl = document.querySelector('#ancho-input') || 
+    document.querySelector('input[placeholder*="Ej. 8"]') ||
+    document.querySelector('.field:has(label) input[placeholder*="8"]');
+  let ancho = '', largo = '', unidadMedida = '';
+  document.querySelectorAll('.field').forEach(function(f) {
+    const lbl = f.querySelector('label')?.textContent || '';
+    const inp = f.querySelector('input:not([disabled])');
+    const sel = f.querySelector('select');
+    if (lbl.includes('Ancho') && inp?.value) {
+      ancho = inp.value.trim();
+      if (sel) unidadMedida = sel.value;
+    }
+    if (lbl.includes('Largo') && inp?.value && !inp.disabled) {
+      largo = inp.value.trim();
+    }
+  });
+  const medida = ancho ? (ancho + (largo ? ' x ' + largo : '') + (unidadMedida ? ' ' + unidadMedida : '')).trim() : 'N/A';
+
+  // Registro reverso
+  const registroEl = document.querySelector('.radio-pill.selected[onclick*="selectRegistro"]') ||
+    document.querySelector('[data-group="registro"].selected');
+  const registro = registroEl ? registroEl.textContent.trim() : 'N/A';
+
+  // Tipo impresión
+  const tipoImpEl = document.querySelector('.radio-pill.selected[onclick*="selectTipoImpresion"]') ||
+    document.querySelector('[data-group="tipo-imp"].selected');
+  const tipoImp = tipoImpEl ? tipoImpEl.textContent.trim() : 'N/A';
+
+  // Tintas
+  // Tintas — leer desde los select de cada tinta-row
+  function leerTintas(listId) {
+    return Array.from(document.querySelectorAll('#' + listId + ' .tinta-row')).map(function(row) {
+      const sel = row.querySelector('select');
+      const libre = row.querySelector('.tinta-libre');
+      if (!sel || !sel.value) return null;
+      if (sel.value === 'Otro (escribir)') return libre?.value?.trim() || null;
+      return sel.value;
+    }).filter(Boolean);
+  }
+  const tintasFrentes = leerTintas('tintas-frente');
+  const tintasReverso = leerTintas('tintas-reverso');
+
+  // Campos condicionales
+  const distCintas = document.querySelector('#dist-cintas')?.value || 
+    document.querySelector('input[placeholder*="cintas"]')?.value || '';
+  const distBolsas = document.querySelector('#dist-bolsas')?.value || 
+    document.querySelector('input[placeholder*="bolsas"]')?.value || '';
+  const largoStick = document.querySelector('#largo-stick')?.value || 
+    document.querySelector('input[placeholder*="stick"]')?.value || 
+    document.querySelector('input[placeholder*="Stick"]')?.value || '';
+
+  // Observaciones
+  const obs = gid('observaciones') || 
+    document.querySelector('textarea')?.value || 
+    document.querySelector('input[placeholder*="Se anexa"]')?.value || '';
+
+  // Tipo de trabajo
+  const tipoTrabajo = Array.from(document.querySelectorAll('.check-pill.selected'))
+    .map(e => e.textContent.trim()).join(' · ');
+
+  return {
+    fecha:          fecha || new Date().toLocaleDateString('es-MX'),
+    zona:           gid('zona'),
+    consecutivo:    gid('consecutivo'),
+    asesor:         gid('select-asesor'),
+    codigo_interno: gid('codigo-interno'),
+    planta_tif:     gid('planta-tif'),
+    cliente:        gid('cliente'),
+    producto:       gid('producto') === 'otro' ? gid('producto-libre') : gid('producto'),
+    sustituye:      document.querySelector('[data-group="sustituye"].selected')?.textContent?.trim() || 'N/A',
+    codigo_unico:   gid('codigo-unico'),
+    igualar:        gid('igualar'),
+    material:       gid('material'),
+    color:          gid('color') === 'otro' ? gid('color-libre') : gid('color'),
+    medida: (() => {
+      // Para Stick: solo ancho plano (sin largo)
+      // Para otros: ancho x largo + unidad
+      const pres = gid('presentacion');
+      const esStick = pres === 'Stick Mts Corr' || pres === 'Stick Mill Mts Corr';
+      if (esStick) {
+        return ancho ? (ancho + (unidadMedida ? ' ' + unidadMedida : '')).trim() : 'N/A';
+      }
+      return ancho ? (ancho + (largo ? ' x ' + largo : '') + (unidadMedida ? ' ' + unidadMedida : '')).trim() : 'N/A';
+    })(),
+    codigo_barras:  gid('codigo-barras'),
+    presentacion: (() => {
+      // Para Stick: cantidad + unidad (ej. "150 Mts Corr"), sin la palabra "Stick"
+      const pres = gid('presentacion');
+      if ((pres === 'Stick Mts Corr' || pres === 'Stick Mill Mts Corr') && largoStick) {
+        const unidad = pres === 'Stick Mts Corr' ? 'Mts Corr' : 'Mill Mts Corr';
+        return largoStick + ' ' + unidad;
+      }
+      return pres;
+    })(),
+    sello:          gid('sello'),
+    barniz: (() => {
+      // Si el chip "Barniz" está seleccionado en Tipo de trabajo → "Óptico"
+      const chips = Array.from(document.querySelectorAll('.check-pill.selected'));
+      const tieneBarniz = chips.some(c => c.textContent.trim() === 'Barniz');
+      return tieneBarniz ? 'Óptico' : 'N/A';
+    })(),
+    tipo_impresion: tipoImp,
+    registro_reverso: registro,
+    dsi_frente:     gid('dsi-frente-input'),
+    dsi_reverso:    gid('dsi-reverso-input'),
+    distancia_cintas: distCintas,
+    distancia_bolsas: distBolsas,
+    largo_stick:    largoStick,
+    tintas_frente:  tintasFrentes,
+    tintas_reverso: tintasReverso,
+    observaciones:  obs,
+    tipo_trabajo:   tipoTrabajo,
+    artista:        '— pendiente Preprensa —',
+    hist_cambio_1:  tipoTrabajo || 'N/A',
+    hist_fecha_1:   fecha,
+    hist_cambio_2:  '', hist_fecha_2: '',
+  };
+}
+
+
+// ─── GENERAR PRINTCARD ────────────────────────────────────────────
+function generarPrintCard() {
+  try {
+    const data = construirDataPrintCard();
+    window._lastPrintCardData = data;
+    const tpl = document.getElementById('tpl-printcard');
+    const clone = tpl.cloneNode(true);
+    clone.removeAttribute('id');
+
+    // Reemplazar variables {{campo}} en nodos de texto
+    (function walk(node) {
+      if (node.nodeType === 3) {
+        node.textContent = node.textContent.replace(/\{\{(\w+)\}\}/g,
+          (_, k) => data[k] !== undefined ? data[k] : '');
+      } else { node.childNodes.forEach(walk); }
+    })(clone);
+
+    // Reemplazar chips de tintas hardcodeados por los del formulario
+    function chipTinta(nombre) {
+      const colores = {
+        'Cyan':'#00B4D8','Magenta':'#D63384','Amarillo':'#FFC107',
+        'Negro':'#1a1a1a','Blanco':'#ffffff','Reflex':'#001489','Barniz':'#cfd6e0',
+        '185C':'#C8102E','187C':'#B22222','485C':'#D22B2B','483C':'#6B3226',
+        '072C':'#001489','3005C':'#0076A8','123C':'#FFC72C',
+        '1245':'#C9A227','1795':'#C8102E','1955':'#6E1423',
+      };
+      let color = '#e0e0e0';
+      for (const k in colores) {
+        if (nombre.replace(/\s/g,'').toLowerCase().includes(k.toLowerCase())) {
+          color = colores[k]; break;
+        }
+      }
+      const light = ['#ffffff','#FFC107','#FFC72C','#C9A227','#cfd6e0','#e0e0e0'];
+      const textColor = light.includes(color) ? '#333' : '#fff';
+      return `<span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e6f2;border-radius:18px;padding:4px 11px;font-size:10px;font-weight:600;margin:2px;"><span style="width:13px;height:13px;border-radius:50%;background:${color};border:1px solid #bbb;flex-shrink:0"></span><span style="color:#111">${nombre}</span></span>`;
+    }
+
+    ['frente','reverso'].forEach(function(lado) {
+      const container = clone.querySelector('[data-tintas="'+lado+'"]');
+      if (!container) return;
+      const tintas = lado === 'frente' ? data.tintas_frente : data.tintas_reverso;
+      // Eliminar todos los chips existentes (mantener solo el label TINTAS)
+      const labelSpan = container.querySelector('span:first-child');
+      container.innerHTML = '';
+      if (labelSpan) container.appendChild(labelSpan);
+      // Agregar chips del formulario
+      if (tintas && tintas.length) {
+        tintas.forEach(function(t) {
+          container.insertAdjacentHTML('beforeend', chipTinta(t));
+        });
+      } else {
+        container.insertAdjacentHTML('beforeend', '<span style="font-size:10px;color:#bbb;font-style:italic">N/A</span>');
+      }
+    });
+
+    const frente = clone.querySelector('[data-screen-label*="Frente"]');
+    const reverso = clone.querySelector('[data-screen-label*="Reverso"]');
+    document.getElementById('pc-frente').innerHTML = '';
+    document.getElementById('pc-reverso').innerHTML = '';
+    if (frente) document.getElementById('pc-frente').appendChild(frente);
+
+    // Solo mostrar Reverso si el registro lleva reverso
+    const noLlevaReverso = data.registro_reverso && 
+      data.registro_reverso.toLowerCase().includes('n/a');
+    const labelReverso = document.querySelector('.pc-label:last-of-type');
+    if (noLlevaReverso) {
+      document.getElementById('pc-reverso').style.display = 'none';
+      // Ocultar también el label "Reverso"
+      const labels = document.querySelectorAll('.pc-label');
+      labels.forEach(function(l) {
+        if (l.textContent.includes('Reverso')) l.style.display = 'none';
+      });
+    } else {
+      document.getElementById('pc-reverso').style.display = '';
+      if (reverso) document.getElementById('pc-reverso').appendChild(reverso);
+      // Mostrar el label Reverso
+      const labels = document.querySelectorAll('.pc-label');
+      labels.forEach(function(l) {
+        if (l.textContent.includes('Reverso')) l.style.display = '';
+      });
+    }
+    document.getElementById('pc-subtitulo').textContent =
+      (data.cliente||'') + ' — ' + (data.consecutivo||'');
+    // Generar preview del DataCard
+    document.getElementById('dc-preview').innerHTML = generarDataCardHTML(data);
+    mostrarPantalla('screen-printcard');
+    // Guardar en backend de forma silenciosa (no bloquea al usuario)
+    setTimeout(function(){ guardarCapturaEnBackend(data); }, 800);
+  } catch(e) {
+    alert('Error al generar PrintCard: ' + e.message);
+    console.error(e);
+  }
+}
+
+// ─── DESCARGA PDF ─────────────────────────────────────────────────
+async function descargarPrintCard() {
+  const btn = document.getElementById('btn-dl-printcard');
+  const txt = document.getElementById('btn-pc-txt');
+  txt.textContent = '⏳ Generando PDF...';
+  btn.disabled = true;
+  try {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation:'portrait', unit:'px', format:'letter' });
+    const pW = pdf.internal.pageSize.getWidth();
+    const pH = pdf.internal.pageSize.getHeight();
+    const pags = [
+      document.getElementById('pc-frente').firstElementChild,
+      document.getElementById('pc-reverso').firstElementChild,
+    ].filter(Boolean);
+    for (let i=0; i<pags.length; i++) {
+      const c = await html2canvas(pags[i], {scale:2, useCORS:true, backgroundColor:'#fff'});
+      const img = c.toDataURL('image/jpeg', 0.92);
+      const r = Math.min(pW/c.width, pH/c.height);
+      if (i>0) pdf.addPage();
+      pdf.addImage(img,'JPEG',(pW-c.width*r)/2,(pH-c.height*r)/2,c.width*r,c.height*r);
+    }
+    const d = window._lastPrintCardData || {};
+    pdf.save('PrintCard_'+(d.consecutivo||'').replace(/\s/g,'_')+'_'+(d.cliente||'').replace(/\s/g,'_')+'.pdf');
+  } catch(e) { alert('Error PDF: '+e.message); }
+  finally { txt.textContent='⬇ Descargar Printcard PDF'; btn.disabled=false; }
+}
+
+// ─── GENERADOR DE DATACARD HTML ──────────────────────────────────
+function generarDataCardHTML(data) {
+  const AZUL = '#1b3a7a';
+  const GRIS = '#6b7585';
+  function sec(titulo, contenido) {
+    return '<div style="border-radius:6px;border:0.5px solid #d7dce5;margin-bottom:8px;overflow:hidden">'
+      + '<div style="background:'+AZUL+';color:#fff;font-size:11px;font-weight:700;padding:5px 10px">'+titulo+'</div>'
+      + '<div style="padding:10px 12px">'+contenido+'</div></div>';
+  }
+  function fld(label, val, w) {
+    w = w || '30%';
+    return '<div style="display:inline-block;width:'+w+';vertical-align:top;margin-bottom:6px">'
+      + '<div style="font-size:7px;color:'+GRIS+';text-transform:uppercase;letter-spacing:.05em">'+label+'</div>'
+      + '<div style="font-size:10px;font-weight:700;color:'+AZUL+'">'+(val||'N/A')+'</div></div>';
+  }
+  function chp(texto, activo) {
+    return '<span style="display:inline-block;border-radius:20px;padding:2px 9px;font-size:9px;margin:2px;'
+      + 'background:'+(activo?AZUL:'#fff')+';color:'+(activo?'#fff':'#444')
+      + ';border:0.5px solid '+(activo?AZUL:'#d7dce5')+'">'+texto+'</span>';
+  }
+  const tiposList = ['Nuevo','Cambio NO afecta diseño','Cambio en diseño','Muestra','Desarrollo',
+    'Impresión 360','Cliente cuenta con muestra','Barniz','Reverso solo barniz',
+    'Estándar de color','Confirma visita cliente'];
+  const selTipos = Array.from(document.querySelectorAll('.check-pill.selected'))
+    .map(function(e){ return e.textContent.trim(); });
+
+  return '<div style="width:816px;background:#fff;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;padding:20px 24px;box-shadow:0 8px 32px rgba(0,0,0,.18)">'
+    + '<div style="background:#102554;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;margin:-20px -24px 14px -24px">'
+    + '<div><span style="font-size:18px;font-weight:800">zubex</span>'
+    + '<div style="font-size:9px;color:#aebcdd;margin-top:2px">Captura de DataCard · Comercial</div></div>'
+    + '<div style="background:#fff;border-radius:4px;padding:6px 10px;font-size:8px;color:#102554;text-align:right">'
+    + '<div style="font-weight:700">Sistema de Gestión de Inocuidad y Calidad</div>'
+    + '<div>Formato: DATA CARD</div><div>Clave: PRE-F-01 · Revisión: 07</div></div></div>'
+    + sec('Información general',
+        fld('Fecha', data.fecha) + fld('Zona', data.zona||'N/A') + fld('Consecutivo', data.consecutivo)
+      + fld('Asesor comercial', data.asesor) + fld('Código interno', data.codigo_interno||'N/A') + fld('Planta TIF', data.planta_tif||'N/A')
+      + fld('Cliente / Prospecto', data.cliente, '30%') + fld('Producto', data.producto, '30%') + fld('¿Sustituye?', data.sustituye||'N/A', '30%')
+      + fld('Código único y versión', data.codigo_unico, '30%') + fld('Igualar a código', data.igualar||'N/A', '30%'))
+    + sec('Tipo de trabajo', tiposList.map(function(t){ return chp(t, selTipos.includes(t)); }).join(''))
+    + sec('Especificaciones de producto',
+        fld('Material', data.material) + fld('Color', data.color) + fld('Medida', data.medida)
+      + fld('Código de barras', data.codigo_barras||'N/A') + fld('Presentación', data.presentacion) + fld('Tipo de sello', data.sello)
+      + (data.distancia_cintas ? fld('Dist. entre cintas', data.distancia_cintas) : '')
+      + (data.distancia_bolsas ? fld('Dist. entre bolsas', data.distancia_bolsas) : '')
+      + (data.largo_stick ? fld('Largo de Stick', data.largo_stick) : ''))
+    + sec('Área impresa',
+        fld('Tipo de impresión', data.tipo_impresion, '30%') + fld('Registro reverso/frente', data.registro_reverso||'N/A', '35%')
+      + fld('DSI Frente', data.dsi_frente||'N/A', '15%') + fld('DSI Reverso', data.dsi_reverso||'N/A', '15%'))
+    + sec('Tintas / Pantones',
+        '<div style="display:flex;gap:20px">'
+      + '<div style="flex:1"><div style="font-size:8px;font-weight:700;color:'+GRIS+';margin-bottom:4px">FRENTE</div>'
+      + (data.tintas_frente&&data.tintas_frente.length ? data.tintas_frente.map(function(t){ return chp(t,false); }).join('') : '<span style="font-size:9px;color:#bbb;font-style:italic">N/A</span>')
+      + '</div><div style="flex:1"><div style="font-size:8px;font-weight:700;color:'+GRIS+';margin-bottom:4px">REVERSO</div>'
+      + (data.tintas_reverso&&data.tintas_reverso.length ? data.tintas_reverso.map(function(t){ return chp(t,false); }).join('') : '<span style="font-size:9px;color:#bbb;font-style:italic">N/A</span>')
+      + '</div></div>')
+    + sec('Observaciones', '<div style="font-size:10px;color:#333">'+(data.observaciones||'N/A')+'</div>')
+    + '<div style="font-size:7px;color:#aaa;margin-top:6px;border-top:0.5px solid #eee;padding-top:6px">NOTA: Los documentos del Sistema de Gestión de Inocuidad y Calidad de ZUBEX INDUSTRIAL se controlan en RED INTERNA. Cualquier copia impresa es SOLO REFERENCIA.</div>'
+    + '</div>';
+}
+
+// ─── DESCARGA DE DATACARD COMO PDF ───────────────────────────────
+async function descargarDataCard() {
+  var btn = document.getElementById('btn-dl-datacard');
+  var txt = document.getElementById('btn-dc-txt');
+  txt.textContent = '⏳ Generando...';
+  btn.disabled = true;
+  try {
+    var jsPDF = window.jspdf.jsPDF;
+    var pdf = new jsPDF({ orientation:'portrait', unit:'px', format:'letter' });
+    var pW = pdf.internal.pageSize.getWidth();
+    var pH = pdf.internal.pageSize.getHeight();
+    var el = document.getElementById('dc-preview').firstElementChild;
+    var canvas = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#fff'});
+    var img = canvas.toDataURL('image/jpeg', 0.92);
+    var r = Math.min(pW/canvas.width, pH/canvas.height);
+    pdf.addImage(img,'JPEG',(pW-canvas.width*r)/2,(pH-canvas.height*r)/2,canvas.width*r,canvas.height*r);
+    var d = window._lastPrintCardData || {};
+    pdf.save('DataCard_'+((d.consecutivo||'').replace(/\s/g,'_'))+'_'+((d.cliente||'').replace(/\s/g,'_'))+'.pdf');
+  } catch(e) { alert('Error DataCard PDF: '+e.message); console.error(e); }
+  finally { txt.textContent='\u2b07 DataCard PDF'; btn.disabled=false; }
+}
+
+
+
+// ─── VALIDAR Y GENERAR (app unificada) ───────────────────────────
+function validarYGenerarApp() {
+  const faltantes = [];
+
+  // Chips de tipo de trabajo
+  const pills = document.querySelectorAll('.field .check-pill');
+  if (pills.length > 0 && !Array.from(pills).some(p => p.classList.contains('selected'))) {
+    faltantes.push('Tipo de trabajo — selecciona al menos una opción');
+  }
+
+  // Selects e inputs obligatorios
+  document.querySelectorAll('.card-body .field').forEach(function(field) {
+    const label = field.querySelector('label');
+    if (!label || !label.querySelector('.req')) return;
+    if (field.querySelector('.check-pill')) return;
+
+    const sel = field.querySelector('select');
+    const inp = field.querySelector('input[type="text"]');
+
+    if (sel) {
+      // Si el select tiene valor seleccionado, el campo está OK
+      // Solo fallar si no hay valor Y no es el caso "otro con input"
+      if (!sel.value) {
+        faltantes.push(label.textContent.replace('*','').replace(/\(.*\)/g,'').trim());
+      } else if (sel.value === 'otro') {
+        // Solo revisar el input si eligió "Otro"
+        if (inp && !inp.disabled && !inp.value.trim()) {
+          faltantes.push(label.textContent.replace('*','').replace(/\(.*\)/g,'').trim() + ' (especifica el valor)');
+        }
+      }
+      // Si sel.value tiene cualquier otro valor → campo OK, no revisar input
+    } else if (inp && !inp.disabled && !inp.readOnly) {
+      if (!inp.value.trim()) {
+        faltantes.push(label.textContent.replace('*','').replace(/\(.*\)/g,'').trim());
+      }
+    }
+  });
+
+  if (faltantes.length > 0) {
+    document.getElementById('campos-faltantes').innerHTML =
+      faltantes.map(f => '<li>'+f+'</li>').join('');
+    document.getElementById('validacion-modal').style.display = 'flex';
+    return;
+  }
+  generarPrintCard();
+}
+
+
+// ══════════════════════════════════════════════════════════════════
+// CONFIGURACIÓN DE API
+// Cambiar API_BASE_URL por la URL del servidor cuando TI lo configure
+// Ejemplo: 'http://192.168.1.50:3000'  o  'http://servidor-zubex:3000'
+// ══════════════════════════════════════════════════════════════════
+const API_BASE_URL = ''; // dejar vacío = mismo servidor (modo producción)
+// const API_BASE_URL = 'http://localhost:3000'; // Para pruebas locales
+
+async function apiGet(path) {
+  const r = await fetch(API_BASE_URL + path);
+  if (!r.ok) throw new Error('Error ' + r.status);
+  return r.json();
+}
+async function apiPost(path, body) {
+  const r = await fetch(API_BASE_URL + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error('Error ' + r.status);
+  return r.json();
+}
+async function apiPatch(path, body) {
+  const r = await fetch(API_BASE_URL + path, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error('Error ' + r.status);
+  return r.json();
+}
+
+// ── PANTALLA DE INICIO ─────────────────────────────────────────────
+function irANuevaCaptura() {
+  mostrarPantalla('screen-formulario');
+}
+
+function mostrarBanner(msg, tipo) {
+  // tipo: 'info' | 'error' | 'ok'
+  const el = document.getElementById('api-status-banner');
+  if (!el) return;
+  el.className = 'api-banner' + (tipo === 'error' ? ' error' : tipo === 'ok' ? ' ok' : '');
+  el.innerHTML = msg;
+  el.style.display = 'flex';
+}
+
+async function cargarCapturas() {
+  const tbody = document.getElementById('capturas-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon"><span class="spinner-inline"></span></div><p>Cargando capturas...</p></div></td></tr>';
+  const banner = document.getElementById('api-status-banner');
+  if (banner) banner.style.display = 'none';
+
+  try {
+    const capturas = await apiGet('/api/capturas');
+    renderCapturas(capturas);
+    if (banner) banner.style.display = 'none';
+  } catch(e) {
+    mostrarBanner(
+      '⚠️ <strong>No se pudo conectar al servidor.</strong> ' +
+      'Configura <code>API_BASE_URL</code> con la dirección que asigne TI, ' +
+      'o pídele a TI que levante el servidor (<code>server.js</code>).',
+      'error'
+    );
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">📂</div><p>Sin conexión al servidor — las capturas aparecerán aquí cuando TI configure el backend.</p></div></td></tr>';
+  }
+}
+
+function renderCapturas(capturas) {
+  const tbody = document.getElementById('capturas-tbody');
+  if (!capturas || capturas.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">📋</div><p style="font-weight:700">Aún no hay capturas</p><p>Las capturas de Comercial aparecerán aquí.</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = capturas.map(function(c) {
+    const revisado = c.estado === 'Revisado';
+    return '<tr>' +
+      '<td>' + (c.fecha || '—') + '</td>' +
+      '<td class="td-cliente">' + (c.cliente || '—') + '</td>' +
+      '<td class="td-consec">' + (c.consecutivo || '—') + '</td>' +
+      '<td>' + (c.asesor || '—') + '</td>' +
+      '<td class="td-pdfs">' +
+        '<button class="btn-pdf-icon" onclick="descargarPDFCaptura(\'' + c.id + '\',\'datacard\')" title="Descargar DataCard">⬇ DC</button>' +
+        '<button class="btn-pdf-icon" onclick="descargarPDFCaptura(\'' + c.id + '\',\'printcard\')" title="Descargar PrintCard">⬇ PC</button>' +
+      '</td>' +
+      '<td class="td-revisado">' +
+        '<button class="revisado-toggle' + (revisado ? ' marcado' : '') + '" ' +
+          'onclick="toggleRevisado(\'' + c.id + '\', this)" ' +
+          'title="' + (revisado ? 'Marcado como revisado — clic para desmarcar' : 'Marcar como revisado') + '">' +
+          '✓' +
+        '</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+async function descargarPDFCaptura(id, tipo) {
+  try {
+    const url = API_BASE_URL + '/api/capturas/' + id + '/' + tipo + '.pdf';
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = tipo + '_' + id + '.pdf';
+    link.click();
+  } catch(e) {
+    alert('Error al descargar: ' + e.message);
+  }
+}
+
+async function toggleRevisado(id, btn) {
+  const yaRevisado = btn.classList.contains('marcado');
+  const nuevoEstado = yaRevisado ? 'Pendiente' : 'Revisado';
+  btn.style.opacity = '0.5';
+  try {
+    await apiPatch('/api/capturas/' + id, { estado: nuevoEstado });
+    btn.classList.toggle('marcado', !yaRevisado);
+    btn.title = !yaRevisado ? 'Marcado como revisado — clic para desmarcar' : 'Marcar como revisado';
+  } catch(e) {
+    console.warn('No se pudo actualizar estado:', e.message);
+    // Actualización optimista: refleja el cambio aunque el servidor no responda
+    btn.classList.toggle('marcado', !yaRevisado);
+  } finally {
+    btn.style.opacity = '1';
+  }
+}
+
+// ── GUARDAR CAPTURA EN BACKEND ────────────────────────────────────
+// Se llama automáticamente al generar documentos.
+// Genera ambos PDFs en base64 y los envía al servidor.
+async function guardarCapturaEnBackend(data) {
+  try {
+    const { jsPDF } = window.jspdf;
+
+    async function elAPdfB64(el) {
+      const c = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#fff' });
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'letter' });
+      const pW = pdf.internal.pageSize.getWidth();
+      const pH = pdf.internal.pageSize.getHeight();
+      const r = Math.min(pW / c.width, pH / c.height);
+      pdf.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG',
+        (pW - c.width * r) / 2, (pH - c.height * r) / 2, c.width * r, c.height * r);
+      return pdf.output('datauristring').split(',')[1];
+    }
+
+    const dcEl = document.getElementById('dc-preview').firstElementChild;
+    const dcB64 = await elAPdfB64(dcEl);
+
+    const pdf2 = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'letter' });
+    const pW2 = pdf2.internal.pageSize.getWidth();
+    const pH2 = pdf2.internal.pageSize.getHeight();
+    const pags = [
+      document.getElementById('pc-frente').firstElementChild,
+      document.getElementById('pc-reverso').firstElementChild,
+    ].filter(Boolean);
+    for (let i = 0; i < pags.length; i++) {
+      const c = await html2canvas(pags[i], { scale: 2, useCORS: true, backgroundColor: '#fff' });
+      const r = Math.min(pW2 / c.width, pH2 / c.height);
+      if (i > 0) pdf2.addPage();
+      pdf2.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG',
+        (pW2 - c.width * r) / 2, (pH2 - c.height * r) / 2, c.width * r, c.height * r);
+    }
+    const pcB64 = pdf2.output('datauristring').split(',')[1];
+
+    await apiPost('/api/capturas', {
+      fecha:       data.fecha,
+      cliente:     data.cliente,
+      consecutivo: data.consecutivo,
+      asesor:      data.asesor,
+      producto:    data.producto,
+      codigo_unico: data.codigo_unico,
+      estado:      'Pendiente',
+      datacard_b64:  dcB64,
+      printcard_b64: pcB64,
+      nombre_dc:  'DataCard_' + (data.consecutivo||'').replace(/\s/g,'_') + '_' + (data.cliente||'').replace(/\s/g,'_') + '.pdf',
+      nombre_pc:  'PrintCard_' + (data.consecutivo||'').replace(/\s/g,'_') + '_' + (data.cliente||'').replace(/\s/g,'_') + '.pdf',
+    });
+    console.log('Captura guardada en servidor.');
+  } catch(e) {
+    // No interrumpir al usuario — solo log silencioso
+    console.warn('No se pudo guardar en backend:', e.message);
+  }
+}
+
+const CORREOS_ASESORES = {
+  'Adriana Robles': 'a.robles@zubex.com.mx',
+  'Alberto Zuñiga': 'a.zuniga@zubex.com.mx',
+  'Alejandro Hdz': 'a.hernandez@zubex.com.mx',
+  'Alfredo Najar': 'a.najar@zubex.com.mx',
+  'Alma Patiño': 'a.patino@zubex.com.mx',
+  'Araceli de Alba': 'aracelidealba32@gmail.com',
+  'Armando Ayala': 'aayala@mawmexicana.com',
+  'Asiel Vázquez': 'avazquez@grofuder.com',
+  'Carlos Ramírez': 'cramirez@mawmexicana.com',
+  'Erick Rodríguez': 'e.vargas@zubex.com.mx',
+  'Fariva Rodríguez': 'f.rodriguez@zubex.com.mx',
+  'Iván Díaz': 'idiaz@mawmexicana.com',
+  'Leonardo Guzmán': 'l.guzman@zubex.com',
+  'LuzMa Gaytán': 'lmgaytan@mawmexicana.com',
+  'Norma Silva': 'n.silva@zubex.com.mx',
+  'Rafael Mijangos': 'r.mijangos@zubex.com.mx',
+  'Tanya Ríos': 't.rios@zubex.com.mx',
+  'Vanesa Silva': 'v.silva@zubex.com.mx',
+};
+const CORREOS_PREPRENSA = ['e.moncada@zubex.com.mx','k.hinojosa@zubex.com.mx'];
+// (Power Automate eliminado — se reemplazó por sistema de capturas en servidor)
+function getCorreoAsesor() {
+  const a = document.getElementById('select-asesor')?.value || '';
+  return CORREOS_ASESORES[a] || '';
+}
+
+</script>
+<script>
+// Fecha automática
+(function(){
+  var h=new Date();
+  var el=document.getElementById("fecha-hoy");
+  if(el) el.value=String(h.getDate()).padStart(2,"0")+"/"+String(h.getMonth()+1).padStart(2,"0")+"/"+h.getFullYear();
+})();
+</script>
+
+<!-- PANTALLA 2: RESULTADOS -->
+<div id="screen-printcard" class="screen">
+  <div class="pc-topbar">
+    <div>
+      <div class="t">Documentos generados</div>
+      <div class="s" id="pc-subtitulo">Listo para revisar</div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <button class="btn-back" onclick="volverFormulario()">← Volver</button>
+      <button class="btn-dl" id="btn-dl-datacard" onclick="descargarDataCard()">
+        <span id="btn-dc-txt">⬇ DataCard PDF</span>
+      </button>
+      <button class="btn-dl" id="btn-dl-printcard" onclick="descargarPrintCard()">
+        <span id="btn-pc-txt">⬇ Printcard PDF</span>
+      </button>
+      <button class="btn-back" onclick="mostrarPantalla('screen-inicio')" style="margin-left:8px;">☰ Ver capturas</button>
+    </div>
+  </div>
+  <div class="pc-pages">
+    <div class="pc-label">DATA CARD — PRE-F-01</div>
+    <div id="dc-preview"></div>
+    <div class="pc-label" style="margin-top:20px">PRINT CARD COMERCIAL — Frente</div>
+    <div id="pc-frente"></div>
+    <div class="pc-label" style="margin-top:20px">PRINT CARD COMERCIAL — Reverso</div>
+    <div id="pc-reverso"></div>
+  </div>
+</div>
+
+<!-- PLANTILLA OCULTA DEL PRINTCARD -->
+<div id="tpl-printcard" style="display:none;position:absolute;left:-9999px">
+<div data-template>
+<div data-screen-label="1b Frente" style="width:850px;height:1100px;background:#fff;box-shadow:0 12px 40px rgba(0,0,0,.35);padding:24px 30px;display:flex;flex-direction:column;gap:8px;font-family:'Archivo',sans-serif;color:#1d1d1f;">
+            <!-- header -->
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #060E9F;padding-bottom:7px;">
+              <div style="display:flex;align-items:flex-end;gap:16px;">
+                <img src="data:image/png;base64,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" alt="Zubex" style="width:96px;height:auto;display:block;">
+                <div>
+                  <div style="font-weight:800;font-size:21px;color:#060E9F;line-height:1;letter-spacing:-.5px;">Print Card Comercial</div>
+                  <div style="font-size:10px;color:#8a8f9e;font-weight:500;margin-top:2px;">Formato de aprobación de impresión</div>
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <span style="display:inline-block;background:#060E9F;color:#fff;font-weight:700;font-size:11px;letter-spacing:1.5px;padding:4px 12px;border-radius:20px;">FRENTE</span>
+                <div style="font-size:13px;margin-top:8px;color:#1d1d1f;font-weight:700;">{{hist_fecha_2}}</div>
+                <div style="font-size:10px;color:#9097ad;font-weight:600;">REV.06 · PRE-F-02</div>
+              </div>
+            </div>
+
+            <!-- client strip -->
+            <div style="background:#eef2fc;border-radius:11px;padding:9px 14px;">
+              <div style="display:flex;justify-content:space-between;gap:24px;">
+                <div style="flex:1.05;">
+                  <div style="font-size:9px;font-weight:700;letter-spacing:1px;color:#060E9F;">CLIENTE / PRODUCTO</div>
+                  <div style="font-weight:800;font-size:15px;margin-top:2px;line-height:1.1;">{{cliente}}</div>
+                  <div style="font-weight:600;font-size:11px;color:#3a3a3a;">{{producto}}</div>
+                </div>
+                <div style="flex:3.1;display:grid;grid-template-columns:1.5fr 1fr 1.2fr 0.95fr 0.65fr;gap:4px 12px;align-content:center;">
+                  <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">CÓDIGO ÚNICO</div><div style="font-size:11px;font-weight:600;white-space:nowrap;">{{codigo_unico}}</div></div>
+                  <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">CONSECUTIVO</div><div style="font-size:11px;font-weight:600;">{{consecutivo}}</div></div>
+                  <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">ASESOR COMERCIAL</div><div style="font-size:11px;font-weight:600;">{{asesor}}</div></div>
+                  <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">ARTISTA</div><div style="font-size:11px;font-weight:600;">{{artista}}</div></div>
+                  <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">ESCALA</div><div style="font-size:13px;font-weight:800;color:#060E9F;">50%</div></div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:10px;border-top:1px solid #d7deef;margin-top:8px;padding-top:7px;">
+                <span style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;white-space:nowrap;">DESCRIPCIÓN DEL PRODUCTO</span>
+                <span style="flex:1;font-size:11px;font-weight:600;color:#3a3a3a;border-bottom:1px dashed #c3cbe4;min-height:16px;padding-bottom:2px;">N/A</span>
+              </div>
+            </div>
+
+            <!-- artwork zone -->
+            <div style="flex:1;min-height:0;border:1.5px solid rgba(6,14,159,.22);border-radius:14px;background:#f5f8fe;padding:12px;display:flex;">
+              <image-slot id="m-fr-art" style="width:100%;height:100%;" shape="rounded" radius="10" placeholder="Arrastra aquí el arte del diseño"></image-slot>
+            </div>
+
+            <!-- especificaciones -->
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="width:4px;height:14px;background:#060E9F;border-radius:2px;"></span><span style="font-size:11px;font-weight:800;letter-spacing:.5px;">ESPECIFICACIONES TÉCNICAS</span></div>
+              <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px 12px;">
+                <div><div style="font-size:8.5px;color:#9097ad;font-weight:700;">MATERIAL</div><div style="font-size:11px;font-weight:700;">{{material}}</div></div>
+                <div><div style="font-size:8.5px;color:#9097ad;font-weight:700;">COLOR</div><div style="font-size:11px;font-weight:700;">{{color}}</div></div>
+                <div><div style="font-size:8.5px;color:#9097ad;font-weight:700;">MEDIDA</div><div style="font-size:11px;font-weight:700;">{{medida}}</div></div>
+                <div><div style="font-size:8.5px;color:#9097ad;font-weight:700;">SELLO</div><div style="font-size:11px;font-weight:700;">{{sello}}</div></div>
+                <div><div style="font-size:8.5px;color:#9097ad;font-weight:700;">APLICACIÓN BARNIZ</div><div style="display:flex;gap:4px;margin-top:3px;"><span style="background:#060E9F;color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:11px;">SÍ</span><span style="border:1px solid #cdd2e0;color:#9097ad;font-size:9px;font-weight:700;padding:2px 8px;border-radius:11px;">NO</span></div></div>
+                <div><div style="font-size:8.5px;color:#9097ad;font-weight:700;">BARNIZ</div><div style="font-size:11px;font-weight:700;">{{barniz}}</div></div>
+                <div><div style="font-size:8.5px;color:#9097ad;font-weight:700;">TIPO DE IMPRESIÓN</div><div style="font-size:11px;font-weight:700;">{{tipo_impresion}}</div></div>
+                <div><div style="font-size:8.5px;color:#9097ad;font-weight:700;">PRESENTACIÓN</div><div style="font-size:11px;font-weight:700;">{{presentacion}}</div></div>
+                <div><div style="font-size:8.5px;color:#9097ad;font-weight:700;">DSI</div><div style="font-size:11px;font-weight:700;">N/A</div></div>
+                <div><div style="font-size:8.5px;color:#9097ad;font-weight:700;">PCH TUBULAR</div><div style="display:flex;gap:4px;margin-top:3px;"><span style="background:#060E9F;color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:11px;">SÍ</span><span style="border:1px solid #cdd2e0;color:#9097ad;font-size:9px;font-weight:700;padding:2px 8px;border-radius:11px;">NO</span></div></div>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:9px;padding-top:9px;border-top:1px solid #e7eaf3;flex-wrap:wrap;align-items:center;" data-tintas="frente">
+                <span style="display:inline-flex;align-items:center;gap:8px;margin-right:8px;"><span style="width:4px;height:14px;background:#060E9F;border-radius:2px;"></span><span style="font-size:11px;font-weight:800;letter-spacing:.5px;">TINTAS</span></span>
+                <span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e6f2;border-radius:18px;padding:4px 11px;font-size:10px;font-weight:600;"><span style="width:13px;height:13px;border-radius:50%;background:#fff;border:1px solid #bbb;"></span>Blanco</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e6f2;border-radius:18px;padding:4px 11px;font-size:10px;font-weight:600;"><span style="width:13px;height:13px;border-radius:50%;background:#c2982f;"></span>1245 C</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e6f2;border-radius:18px;padding:4px 11px;font-size:10px;font-weight:600;"><span style="width:13px;height:13px;border-radius:50%;background:#d4312a;"></span>1795 C</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e6f2;border-radius:18px;padding:4px 11px;font-size:10px;font-weight:600;"><span style="width:13px;height:13px;border-radius:50%;background:#8a2535;"></span>1955 C</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e6f2;border-radius:18px;padding:4px 11px;font-size:10px;font-weight:600;"><span style="width:13px;height:13px;border-radius:50%;background:#111;"></span>Negro</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e6f2;border-radius:18px;padding:4px 11px;font-size:10px;font-weight:600;"><span style="width:13px;height:13px;border-radius:50%;background:#d9d9d9;"></span>Barniz</span>
+              </div>
+            </div>
+
+            <!-- production + authorization -->
+            <div style="display:flex;gap:13px;">
+              <div style="flex:1;border:1px solid #e2e6f2;border-radius:13px;padding:13px 15px;display:flex;flex-direction:column;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;"><span style="width:4px;height:14px;background:#060E9F;border-radius:2px;"></span><span style="font-size:11px;font-weight:800;letter-spacing:.5px;">PRODUCCIÓN</span></div>
+                <div style="display:flex;gap:11px;align-items:stretch;">
+                  <div style="flex:1.5;display:grid;grid-template-columns:1fr 1fr 1fr;font-size:10px;border:1px solid #e7eaf3;border-radius:8px;overflow:hidden;align-content:start;">
+                    <div style="background:#eef2fc;font-weight:700;color:#060E9F;padding:4px 6px;font-size:8px;letter-spacing:.2px;">PRIORIDAD</div>
+                    <div style="background:#eef2fc;font-weight:700;color:#060E9F;padding:4px 6px;font-size:8px;letter-spacing:.2px;">MÁQUINA</div>
+                    <div style="background:#eef2fc;font-weight:700;color:#060E9F;padding:4px 6px;font-size:8px;letter-spacing:.2px;">RODILLO</div>
+                    <div style="padding:4px 6px;font-weight:700;border-top:1px solid #e7eaf3;">1</div><div style="padding:4px 6px;font-weight:700;border-top:1px solid #e7eaf3;">4</div><div style="padding:4px 6px;font-weight:700;border-top:1px solid #e7eaf3;">21"</div>
+                    <div style="padding:4px 6px;font-weight:700;border-top:1px solid #e7eaf3;">2</div><div style="padding:4px 6px;font-weight:700;border-top:1px solid #e7eaf3;">11</div><div style="padding:4px 6px;font-weight:700;border-top:1px solid #e7eaf3;">56cm</div>
+                    <div style="padding:4px 6px;font-weight:700;border-top:1px solid #e7eaf3;">3</div><div style="padding:4px 6px;font-weight:700;border-top:1px solid #e7eaf3;">8</div><div style="padding:4px 6px;font-weight:700;border-top:1px solid #e7eaf3;">56cm</div>
+                  </div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                    <div style="font-size:8px;color:#9097ad;font-weight:700;letter-spacing:.2px;line-height:1.15;">FIGURA PRODUCTO FINAL</div>
+                    <image-slot id="m-fr-fig" style="width:100%;flex:1;min-height:48px;" shape="rounded" radius="6" placeholder="img"></image-slot>
+                  </div>
+                </div>
+                <div style="font-size:8.5px;color:#9097ad;font-weight:700;margin-top:11px;letter-spacing:.5px;">HISTORIAL DE CAMBIOS</div>
+                <div style="font-size:10px;margin-top:5px;display:flex;flex-direction:column;gap:5px;">
+                  <div style="display:flex;justify-content:space-between;"><span>1 · {{hist_cambio_1}}</span><span style="color:#9097ad;">{{hist_fecha_1}}</span></div>
+                  <div style="display:flex;justify-content:space-between;"><span>2 · {{hist_cambio_2}}</span><span style="color:#9097ad;">{{hist_fecha_2}}</span></div>
+                  <div style="display:flex;justify-content:space-between;color:#c3c7d4;"><span>3 ·</span><span></span></div>
+                </div>
+              </div>
+              <div style="flex:1.55;border:1px solid #e2e6f2;border-radius:13px;overflow:hidden;display:flex;flex-direction:column;">
+                <div style="background:#060E9F;color:#fff;padding:8px 14px;font-weight:800;font-size:11px;letter-spacing:1px;">AUTORIZACIÓN DEL CLIENTE</div>
+                <div style="display:flex;flex:1;min-height:0;">
+                  <div style="flex:1.25;padding:9px 12px;border-right:1px solid #e2e6f2;display:flex;flex-direction:column;gap:5px;">
+                    <div style="font-size:8px;font-weight:700;letter-spacing:.5px;color:#9097ad;">CONSIDERACIONES TÉCNICAS</div>
+                    <div style="display:flex;gap:6px;font-size:7px;line-height:1.25;"><span style="width:13px;height:13px;border-radius:3px;background:#060E9F;color:#fff;font-weight:800;font-size:8px;display:flex;align-items:center;justify-content:center;flex:none;">A</span><span>Textos fuera de especificación (menores a 6 pts) pueden presentar problemas de legibilidad al imprimir.</span></div>
+                    <div style="display:flex;gap:6px;font-size:7px;line-height:1.25;"><span style="width:13px;height:13px;border-radius:3px;background:#060E9F;color:#fff;font-weight:800;font-size:8px;display:flex;align-items:center;justify-content:center;flex:none;">B</span><span>Sombras y degradados fuera de especificación pueden presentar apariencia cortada (remosqueo).</span></div>
+                    <div style="display:flex;gap:6px;font-size:7px;line-height:1.25;"><span style="width:13px;height:13px;border-radius:3px;background:#060E9F;color:#fff;font-weight:800;font-size:8px;display:flex;align-items:center;justify-content:center;flex:none;">C</span><span>Gráficos fuera de especificación pueden presentar problemas de definición al imprimir.</span></div>
+                    <div style="display:flex;gap:6px;font-size:7px;line-height:1.25;"><span style="width:13px;height:13px;border-radius:3px;background:#060E9F;color:#fff;font-weight:800;font-size:8px;display:flex;align-items:center;justify-content:center;flex:none;">D</span><span>Plasta impresa hasta la orilla puede modificar el espacio sin impresión según la tolerancia de ancho plano.</span></div>
+                    <div style="display:flex;gap:6px;font-size:7px;line-height:1.25;"><span style="width:13px;height:13px;border-radius:3px;background:#060E9F;color:#fff;font-weight:800;font-size:8px;display:flex;align-items:center;justify-content:center;flex:none;">E</span><span>Gráficos en selección a color (CMYK) pueden presentar variación de tono al ajuste de la fotografía.</span></div>
+                    <div style="display:flex;gap:6px;font-size:7px;line-height:1.25;align-items:center;"><span style="width:13px;height:13px;border-radius:3px;background:#060E9F;color:#fff;font-weight:800;font-size:8px;display:flex;align-items:center;justify-content:center;flex:none;">F</span><span style="flex:1;border-bottom:1px dashed #c3cbe4;min-height:12px;"></span></div>
+                  </div>
+                  <div style="flex:1;padding:9px 12px;display:flex;flex-direction:column;gap:6px;min-width:0;">
+                    <div style="font-size:8px;font-weight:700;letter-spacing:.5px;color:#9097ad;">TIPO DE AUTORIZACIÓN</div>
+                    <div style="display:flex;gap:7px;font-size:7.5px;line-height:1.25;"><span style="width:11px;height:11px;border:1.5px solid #060E9F;border-radius:3px;flex:none;margin-top:1px;"></span><span><b>Con base al Print Card</b> — siempre se realizan mejoras en la fotografía antes de imprimir.</span></div>
+                    <div style="display:flex;gap:7px;font-size:7.5px;line-height:1.25;"><span style="width:11px;height:11px;border:1.5px solid #060E9F;border-radius:3px;flex:none;margin-top:1px;"></span><span><b>Liberación a plotter</b> — se envían 2 propuestas impresas para definir la referencia.</span></div>
+                    <div style="display:flex;gap:7px;font-size:7.5px;line-height:1.25;"><span style="width:11px;height:11px;border:1.5px solid #060E9F;border-radius:3px;flex:none;margin-top:1px;"></span><span><b>Muestra física</b> — el cliente envía muestra para tonos / ajuste de fotografía.</span></div>
+                    <div style="display:flex;gap:7px;font-size:7.5px;line-height:1.25;"><span style="width:11px;height:11px;border:1.5px solid #060E9F;border-radius:3px;flex:none;margin-top:1px;"></span><span><b>Liberación a pie de máquina</b> — el cliente acude a liberar la fecha de impresión.</span></div>
+                    <div style="margin-top:auto;text-align:center;padding-top:12px;">
+                      <div style="border-top:1.5px solid #1d1d1f;width:90%;margin:0 auto;"></div>
+                      <div style="font-size:9px;font-weight:700;color:#060E9F;margin-top:4px;letter-spacing:.5px;">FIRMA Y FECHA</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p style="margin:0;font-size:6.4px;line-height:1.35;color:#9097ad;text-align:justify;">Esta representación se desarrolló con base en los datos y textos legales proporcionados por el cliente. Zubex Industrial no será responsable por daños derivados de la información aquí contenida. Para impresión digital, los pantones se convierten al formato digital; favor de utilizar la guía Pantone® como referencia de color. La presente impresión es para aprobación de información: mediante su firma, usted acepta que el producto se imprima exactamente como se presenta en este Print Card. DSI: distancia de sello a impresión.</p>
+          </div>
+</div>
+
+<div class="page-label">PRINT CARD COMERCIAL — Reverso</div>
+<div data-template>
+<div data-screen-label="1b Reverso" style="width:850px;height:1100px;background:#fff;box-shadow:0 12px 40px rgba(0,0,0,.35);padding:24px 30px;display:flex;flex-direction:column;gap:8px;font-family:'Archivo',sans-serif;color:#1d1d1f;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #060E9F;padding-bottom:7px;">
+              <div style="display:flex;align-items:flex-end;gap:16px;">
+                <img src="data:image/png;base64,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" alt="Zubex" style="width:96px;height:auto;display:block;">
+                <div>
+                  <div style="font-weight:800;font-size:21px;color:#060E9F;line-height:1;letter-spacing:-.5px;">Print Card Comercial</div>
+                  <div style="font-size:10px;color:#8a8f9e;font-weight:500;margin-top:2px;">Formato de aprobación de impresión</div>
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <span style="display:inline-block;background:#1d1d1f;color:#fff;font-weight:700;font-size:11px;letter-spacing:1.5px;padding:4px 12px;border-radius:20px;">REVERSO</span>
+                <div style="font-size:13px;margin-top:8px;color:#1d1d1f;font-weight:700;">{{hist_fecha_2}}</div>
+                <div style="font-size:10px;color:#9097ad;font-weight:600;">REV.06 · PRE-F-02</div>
+              </div>
+            </div>
+
+            <div style="background:#eef2fc;border-radius:11px;padding:9px 14px;">
+              <div style="display:flex;justify-content:space-between;gap:24px;">
+                <div style="flex:1.05;">
+                  <div style="font-size:9px;font-weight:700;letter-spacing:1px;color:#060E9F;">CLIENTE / PRODUCTO</div>
+                  <div style="font-weight:800;font-size:15px;margin-top:2px;line-height:1.1;">{{cliente}}</div>
+                  <div style="font-weight:600;font-size:11px;color:#3a3a3a;">{{producto}}</div>
+                </div>
+                <div style="flex:3.1;display:grid;grid-template-columns:1.5fr 1fr 1.2fr 0.95fr 0.65fr;gap:4px 12px;align-content:center;">
+                  <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">CÓDIGO ÚNICO</div><div style="font-size:11px;font-weight:600;white-space:nowrap;">{{codigo_unico}}</div></div>
+                  <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">CONSECUTIVO</div><div style="font-size:11px;font-weight:600;">{{consecutivo}}</div></div>
+                  <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">ASESOR COMERCIAL</div><div style="font-size:11px;font-weight:600;">{{asesor}}</div></div>
+                  <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">ARTISTA</div><div style="font-size:11px;font-weight:600;">{{artista}}</div></div>
+                  <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">ESCALA</div><div style="font-size:13px;font-weight:800;color:#060E9F;">50%</div></div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:10px;border-top:1px solid #d7deef;margin-top:8px;padding-top:7px;">
+                <span style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;white-space:nowrap;">DESCRIPCIÓN DEL PRODUCTO</span>
+                <span style="flex:1;font-size:11px;font-weight:600;color:#3a3a3a;border-bottom:1px dashed #c3cbe4;min-height:16px;padding-bottom:2px;">N/A</span>
+              </div>
+            </div>
+
+            <div style="flex:1;min-height:0;border:1.5px solid rgba(6,14,159,.22);border-radius:14px;background:#f5f8fe;padding:12px;display:flex;">
+              <image-slot id="m-rv-art" style="width:100%;height:100%;" shape="rounded" radius="10" placeholder="Arrastra aquí el arte del reverso"></image-slot>
+            </div>
+
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="width:4px;height:14px;background:#060E9F;border-radius:2px;"></span><span style="font-size:11px;font-weight:800;letter-spacing:.5px;">ESPECIFICACIONES TÉCNICAS</span></div>
+              <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px 12px;">
+                <div><div style="font-size:8.5px;color:#9097ad;font-weight:700;">MATERIAL</div><div style="font-size:11px;font-weight:700;">{{material}}</div></div>
+                <div><div style="font-size:8.5px;color:#9097ad;font-weight:700;">COLOR</div><div style="font-size:11px;font-weight:700;">{{color}}</div></div>
+                <div><div style="font-size:8.5px;color:#9097ad;font-weight:700;">MEDIDA</div><div style="font-size:11px;font-weight:700;">{{medida}}</div></div>
+                <div><div style="font-size:8.5px;color:#9097ad;font-weight:700;">SELLO</div><div style="font-size:11px;font-weight:700;">{{sello}}</div></div>
+                <div><div style="font-size:8.5px;color:#9097ad;font-weight:700;">APLICACIÓN BARNIZ</div><div style="display:flex;gap:4px;margin-top:3px;"><span style="background:#060E9F;color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:11px;">SÍ</span><span style="border:1px solid #cdd2e0;color:#9097ad;font-size:9px;font-weight:700;padding:2px 8px;border-radius:11px;">NO</span></div></div>
+                <div><div style="font-size:8.5px;color:#9097ad;font-weight:700;">BARNIZ</div><div style="font-size:11px;font-weight:700;">{{barniz}}</div></div>
+                <div><div style="font-size:8.5px;color:#9097ad;font-weight:700;">TIPO DE IMPRESIÓN</div><div style="font-size:11px;font-weight:700;">{{tipo_impresion}}</div></div>
+                <div><div style="font-size:8.5px;color:#9097ad;font-weight:700;">PRESENTACIÓN</div><div style="font-size:11px;font-weight:700;">{{presentacion}}</div></div>
+                <div><div style="font-size:8.5px;color:#9097ad;font-weight:700;">DSI</div><div style="font-size:11px;font-weight:700;">N/A</div></div>
+                <div><div style="font-size:8.5px;color:#9097ad;font-weight:700;">PCH TUBULAR</div><div style="display:flex;gap:4px;margin-top:3px;"><span style="background:#060E9F;color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:11px;">SÍ</span><span style="border:1px solid #cdd2e0;color:#9097ad;font-size:9px;font-weight:700;padding:2px 8px;border-radius:11px;">NO</span></div></div>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:9px;padding-top:9px;border-top:1px solid #e7eaf3;flex-wrap:wrap;align-items:center;" data-tintas="reverso">
+                <span style="display:inline-flex;align-items:center;gap:8px;margin-right:8px;"><span style="width:4px;height:14px;background:#060E9F;border-radius:2px;"></span><span style="font-size:11px;font-weight:800;letter-spacing:.5px;">TINTAS</span></span>
+                <span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e6f2;border-radius:18px;padding:4px 11px;font-size:10px;font-weight:600;"><span style="width:13px;height:13px;border-radius:50%;background:#fff;border:1px solid #bbb;"></span>Blanco</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e6f2;border-radius:18px;padding:4px 11px;font-size:10px;font-weight:600;"><span style="width:13px;height:13px;border-radius:50%;background:#c2982f;"></span>1245 C</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e6f2;border-radius:18px;padding:4px 11px;font-size:10px;font-weight:600;"><span style="width:13px;height:13px;border-radius:50%;background:#d4312a;"></span>1795 C</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e6f2;border-radius:18px;padding:4px 11px;font-size:10px;font-weight:600;"><span style="width:13px;height:13px;border-radius:50%;background:#8a2535;"></span>1955 C</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e6f2;border-radius:18px;padding:4px 11px;font-size:10px;font-weight:600;"><span style="width:13px;height:13px;border-radius:50%;background:#111;"></span>Negro</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e6f2;border-radius:18px;padding:4px 11px;font-size:10px;font-weight:600;"><span style="width:13px;height:13px;border-radius:50%;background:#d9d9d9;"></span>Barniz</span>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:13px;">
+              <div style="flex:1;border:1px solid #e2e6f2;border-radius:13px;padding:13px 15px;display:flex;flex-direction:column;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;"><span style="width:4px;height:14px;background:#060E9F;border-radius:2px;"></span><span style="font-size:11px;font-weight:800;letter-spacing:.5px;">PRODUCCIÓN</span></div>
+                <div style="display:flex;gap:11px;align-items:stretch;">
+                  <div style="flex:1.5;display:grid;grid-template-columns:1fr 1fr 1fr;font-size:10px;border:1px solid #e7eaf3;border-radius:8px;overflow:hidden;align-content:start;">
+                    <div style="background:#eef2fc;font-weight:700;color:#060E9F;padding:4px 6px;font-size:8px;letter-spacing:.2px;">PRIORIDAD</div>
+                    <div style="background:#eef2fc;font-weight:700;color:#060E9F;padding:4px 6px;font-size:8px;letter-spacing:.2px;">MÁQUINA</div>
+                    <div style="background:#eef2fc;font-weight:700;color:#060E9F;padding:4px 6px;font-size:8px;letter-spacing:.2px;">RODILLO</div>
+                    <div style="padding:4px 6px;font-weight:700;border-top:1px solid #e7eaf3;">1</div><div style="padding:4px 6px;font-weight:700;border-top:1px solid #e7eaf3;">4</div><div style="padding:4px 6px;font-weight:700;border-top:1px solid #e7eaf3;">21"</div>
+                    <div style="padding:4px 6px;font-weight:700;border-top:1px solid #e7eaf3;">2</div><div style="padding:4px 6px;font-weight:700;border-top:1px solid #e7eaf3;">11</div><div style="padding:4px 6px;font-weight:700;border-top:1px solid #e7eaf3;">56cm</div>
+                    <div style="padding:4px 6px;font-weight:700;border-top:1px solid #e7eaf3;">3</div><div style="padding:4px 6px;font-weight:700;border-top:1px solid #e7eaf3;">8</div><div style="padding:4px 6px;font-weight:700;border-top:1px solid #e7eaf3;">56cm</div>
+                  </div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                    <div style="font-size:8px;color:#9097ad;font-weight:700;letter-spacing:.2px;line-height:1.15;">FIGURA PRODUCTO FINAL</div>
+                    <image-slot id="m-rv-fig" style="width:100%;flex:1;min-height:48px;" shape="rounded" radius="6" placeholder="img"></image-slot>
+                  </div>
+                </div>
+                <div style="font-size:8.5px;color:#9097ad;font-weight:700;margin-top:11px;letter-spacing:.5px;">HISTORIAL DE CAMBIOS</div>
+                <div style="font-size:10px;margin-top:5px;display:flex;flex-direction:column;gap:5px;">
+                  <div style="display:flex;justify-content:space-between;"><span>1 · {{hist_cambio_1}}</span><span style="color:#9097ad;">{{hist_fecha_1}}</span></div>
+                  <div style="display:flex;justify-content:space-between;"><span>2 · {{hist_cambio_2}}</span><span style="color:#9097ad;">{{hist_fecha_2}}</span></div>
+                  <div style="display:flex;justify-content:space-between;color:#c3c7d4;"><span>3 ·</span><span></span></div>
+                </div>
+              </div>
+              <div style="flex:1.55;border:1px solid #e2e6f2;border-radius:13px;overflow:hidden;display:flex;flex-direction:column;">
+                <div style="background:#060E9F;color:#fff;padding:8px 14px;font-weight:800;font-size:11px;letter-spacing:1px;">AUTORIZACIÓN DEL CLIENTE</div>
+                <div style="display:flex;flex:1;min-height:0;">
+                  <div style="flex:1.25;padding:9px 12px;border-right:1px solid #e2e6f2;display:flex;flex-direction:column;gap:5px;">
+                    <div style="font-size:8px;font-weight:700;letter-spacing:.5px;color:#9097ad;">CONSIDERACIONES TÉCNICAS</div>
+                    <div style="display:flex;gap:6px;font-size:7px;line-height:1.25;"><span style="width:13px;height:13px;border-radius:3px;background:#060E9F;color:#fff;font-weight:800;font-size:8px;display:flex;align-items:center;justify-content:center;flex:none;">A</span><span>Textos fuera de especificación (menores a 6 pts) pueden presentar problemas de legibilidad al imprimir.</span></div>
+                    <div style="display:flex;gap:6px;font-size:7px;line-height:1.25;"><span style="width:13px;height:13px;border-radius:3px;background:#060E9F;color:#fff;font-weight:800;font-size:8px;display:flex;align-items:center;justify-content:center;flex:none;">B</span><span>Sombras y degradados fuera de especificación pueden presentar apariencia cortada (remosqueo).</span></div>
+                    <div style="display:flex;gap:6px;font-size:7px;line-height:1.25;"><span style="width:13px;height:13px;border-radius:3px;background:#060E9F;color:#fff;font-weight:800;font-size:8px;display:flex;align-items:center;justify-content:center;flex:none;">C</span><span>Gráficos fuera de especificación pueden presentar problemas de definición al imprimir.</span></div>
+                    <div style="display:flex;gap:6px;font-size:7px;line-height:1.25;"><span style="width:13px;height:13px;border-radius:3px;background:#060E9F;color:#fff;font-weight:800;font-size:8px;display:flex;align-items:center;justify-content:center;flex:none;">D</span><span>Plasta impresa hasta la orilla puede modificar el espacio sin impresión según la tolerancia de ancho plano.</span></div>
+                    <div style="display:flex;gap:6px;font-size:7px;line-height:1.25;"><span style="width:13px;height:13px;border-radius:3px;background:#060E9F;color:#fff;font-weight:800;font-size:8px;display:flex;align-items:center;justify-content:center;flex:none;">E</span><span>Gráficos en selección a color (CMYK) pueden presentar variación de tono al ajuste de la fotografía.</span></div>
+                    <div style="display:flex;gap:6px;font-size:7px;line-height:1.25;align-items:center;"><span style="width:13px;height:13px;border-radius:3px;background:#060E9F;color:#fff;font-weight:800;font-size:8px;display:flex;align-items:center;justify-content:center;flex:none;">F</span><span style="flex:1;border-bottom:1px dashed #c3cbe4;min-height:12px;"></span></div>
+                  </div>
+                  <div style="flex:1;padding:9px 12px;display:flex;flex-direction:column;gap:6px;min-width:0;">
+                    <div style="font-size:8px;font-weight:700;letter-spacing:.5px;color:#9097ad;">TIPO DE AUTORIZACIÓN</div>
+                    <div style="display:flex;gap:7px;font-size:7.5px;line-height:1.25;"><span style="width:11px;height:11px;border:1.5px solid #060E9F;border-radius:3px;flex:none;margin-top:1px;"></span><span><b>Con base al Print Card</b> — siempre se realizan mejoras en la fotografía antes de imprimir.</span></div>
+                    <div style="display:flex;gap:7px;font-size:7.5px;line-height:1.25;"><span style="width:11px;height:11px;border:1.5px solid #060E9F;border-radius:3px;flex:none;margin-top:1px;"></span><span><b>Liberación a plotter</b> — se envían 2 propuestas impresas para definir la referencia.</span></div>
+                    <div style="display:flex;gap:7px;font-size:7.5px;line-height:1.25;"><span style="width:11px;height:11px;border:1.5px solid #060E9F;border-radius:3px;flex:none;margin-top:1px;"></span><span><b>Muestra física</b> — el cliente envía muestra para tonos / ajuste de fotografía.</span></div>
+                    <div style="display:flex;gap:7px;font-size:7.5px;line-height:1.25;"><span style="width:11px;height:11px;border:1.5px solid #060E9F;border-radius:3px;flex:none;margin-top:1px;"></span><span><b>Liberación a pie de máquina</b> — el cliente acude a liberar la fecha de impresión.</span></div>
+                    <div style="margin-top:auto;text-align:center;padding-top:12px;">
+                      <div style="border-top:1.5px solid #1d1d1f;width:90%;margin:0 auto;"></div>
+                      <div style="font-size:9px;font-weight:700;color:#060E9F;margin-top:4px;letter-spacing:.5px;">FIRMA Y FECHA</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p style="margin:0;font-size:6.4px;line-height:1.35;color:#9097ad;text-align:justify;">Esta representación se desarrolló con base en los datos y textos legales proporcionados por el cliente. Zubex Industrial no será responsable por daños derivados de la información aquí contenida. Para impresión digital, los pantones se convierten al formato digital; favor de utilizar la guía Pantone® como referencia de color. La presente impresión es para aprobación de información: mediante su firma, usted acepta que el producto se imprima exactamente como se presenta en este Print Card. DSI: distancia de sello a impresión.</p>
+          </div>
+</div>
+</div>
+</body>
+</html>
