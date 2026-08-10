@@ -476,7 +476,6 @@ image-slot { display:block; background:#eef0f4; border-radius:6px; border:1.5px 
 <!-- Firebase SDK (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 </head>
 <body>
 <!-- ══════════════════════════════════════════════
@@ -1310,60 +1309,60 @@ function construirDataPrintCard() {
 }
 
 
+// ─── CHIP TINTA (función compartida) ─────────────────────────────
+function chipTinta(nombre) {
+  const colores = {
+    'Cyan':'#00B4D8','Magenta':'#D63384','Amarillo':'#FFC107',
+    'Negro':'#1a1a1a','Blanco':'#ffffff','Reflex':'#001489','Barniz':'#cfd6e0',
+    '185C':'#C8102E','187C':'#B22222','485C':'#D22B2B','483C':'#6B3226',
+    '072C':'#001489','3005C':'#0076A8','123C':'#FFC72C',
+    '1245':'#C9A227','1795':'#C8102E','1955':'#6E1423',
+  };
+  let color = '#e0e0e0';
+  for (const k in colores) {
+    if (nombre.replace(/\s/g,'').toLowerCase().includes(k.toLowerCase())) {
+      color = colores[k]; break;
+    }
+  }
+  const light = ['#ffffff','#FFC107','#FFC72C','#C9A227','#cfd6e0','#e0e0e0'];
+  return `<span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e6f2;border-radius:18px;padding:4px 11px;font-size:10px;font-weight:600;margin:2px;"><span style="width:13px;height:13px;border-radius:50%;background:${color};border:1px solid #bbb;flex-shrink:0"></span><span style="color:#111">${nombre}</span></span>`;
+}
+
+// ─── HELPER: Poblar plantilla PrintCard con datos ─────────────────
+function poblarPlantilla(data) {
+  const tpl = document.getElementById('tpl-printcard');
+  const clone = tpl.cloneNode(true);
+  clone.removeAttribute('id');
+  // Reemplazar {{campo}} en nodos de texto
+  (function walk(node) {
+    if (node.nodeType === 3) {
+      node.textContent = node.textContent.replace(/\{\{(\w+)\}\}/g,
+        (_, k) => data[k] !== undefined ? data[k] : '');
+    } else { node.childNodes.forEach(walk); }
+  })(clone);
+  // Chips de tintas
+  ['frente','reverso'].forEach(function(lado) {
+    const container = clone.querySelector('[data-tintas="'+lado+'"]');
+    if (!container) return;
+    const tintas = (lado === 'frente' ? data.tintas_frente : data.tintas_reverso) || [];
+    const labelSpan = container.querySelector('span:first-child');
+    container.innerHTML = '';
+    if (labelSpan) container.appendChild(labelSpan);
+    if (tintas.length) {
+      tintas.forEach(function(t) { container.insertAdjacentHTML('beforeend', chipTinta(t)); });
+    } else {
+      container.insertAdjacentHTML('beforeend', '<span style="font-size:10px;color:#bbb;font-style:italic">N/A</span>');
+    }
+  });
+  return clone;
+}
+
 // ─── GENERAR PRINTCARD ────────────────────────────────────────────
 function generarPrintCard() {
   try {
     const data = construirDataPrintCard();
     window._lastPrintCardData = data;
-    const tpl = document.getElementById('tpl-printcard');
-    const clone = tpl.cloneNode(true);
-    clone.removeAttribute('id');
-
-    // Reemplazar variables {{campo}} en nodos de texto
-    (function walk(node) {
-      if (node.nodeType === 3) {
-        node.textContent = node.textContent.replace(/\{\{(\w+)\}\}/g,
-          (_, k) => data[k] !== undefined ? data[k] : '');
-      } else { node.childNodes.forEach(walk); }
-    })(clone);
-
-    // Reemplazar chips de tintas hardcodeados por los del formulario
-    function chipTinta(nombre) {
-      const colores = {
-        'Cyan':'#00B4D8','Magenta':'#D63384','Amarillo':'#FFC107',
-        'Negro':'#1a1a1a','Blanco':'#ffffff','Reflex':'#001489','Barniz':'#cfd6e0',
-        '185C':'#C8102E','187C':'#B22222','485C':'#D22B2B','483C':'#6B3226',
-        '072C':'#001489','3005C':'#0076A8','123C':'#FFC72C',
-        '1245':'#C9A227','1795':'#C8102E','1955':'#6E1423',
-      };
-      let color = '#e0e0e0';
-      for (const k in colores) {
-        if (nombre.replace(/\s/g,'').toLowerCase().includes(k.toLowerCase())) {
-          color = colores[k]; break;
-        }
-      }
-      const light = ['#ffffff','#FFC107','#FFC72C','#C9A227','#cfd6e0','#e0e0e0'];
-      const textColor = light.includes(color) ? '#333' : '#fff';
-      return `<span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e6f2;border-radius:18px;padding:4px 11px;font-size:10px;font-weight:600;margin:2px;"><span style="width:13px;height:13px;border-radius:50%;background:${color};border:1px solid #bbb;flex-shrink:0"></span><span style="color:#111">${nombre}</span></span>`;
-    }
-
-    ['frente','reverso'].forEach(function(lado) {
-      const container = clone.querySelector('[data-tintas="'+lado+'"]');
-      if (!container) return;
-      const tintas = lado === 'frente' ? data.tintas_frente : data.tintas_reverso;
-      // Eliminar todos los chips existentes (mantener solo el label TINTAS)
-      const labelSpan = container.querySelector('span:first-child');
-      container.innerHTML = '';
-      if (labelSpan) container.appendChild(labelSpan);
-      // Agregar chips del formulario
-      if (tintas && tintas.length) {
-        tintas.forEach(function(t) {
-          container.insertAdjacentHTML('beforeend', chipTinta(t));
-        });
-      } else {
-        container.insertAdjacentHTML('beforeend', '<span style="font-size:10px;color:#bbb;font-style:italic">N/A</span>');
-      }
-    });
+    const clone = poblarPlantilla(data);
 
     const frente = clone.querySelector('[data-screen-label*="Frente"]');
     const reverso = clone.querySelector('[data-screen-label*="Reverso"]');
@@ -1371,32 +1370,25 @@ function generarPrintCard() {
     document.getElementById('pc-reverso').innerHTML = '';
     if (frente) document.getElementById('pc-frente').appendChild(frente);
 
-    // Solo mostrar Reverso si el registro lleva reverso
-    const noLlevaReverso = data.registro_reverso && 
+    const noLlevaReverso = data.registro_reverso &&
       data.registro_reverso.toLowerCase().includes('n/a');
-    const labelReverso = document.querySelector('.pc-label:last-of-type');
     if (noLlevaReverso) {
       document.getElementById('pc-reverso').style.display = 'none';
-      // Ocultar también el label "Reverso"
-      const labels = document.querySelectorAll('.pc-label');
-      labels.forEach(function(l) {
+      document.querySelectorAll('.pc-label').forEach(function(l) {
         if (l.textContent.includes('Reverso')) l.style.display = 'none';
       });
     } else {
       document.getElementById('pc-reverso').style.display = '';
       if (reverso) document.getElementById('pc-reverso').appendChild(reverso);
-      // Mostrar el label Reverso
-      const labels = document.querySelectorAll('.pc-label');
-      labels.forEach(function(l) {
+      document.querySelectorAll('.pc-label').forEach(function(l) {
         if (l.textContent.includes('Reverso')) l.style.display = '';
       });
     }
     document.getElementById('pc-subtitulo').textContent =
       (data.cliente||'') + ' — ' + (data.consecutivo||'');
-    // Generar preview del DataCard
     document.getElementById('dc-preview').innerHTML = generarDataCardHTML(data);
     mostrarPantalla('screen-printcard');
-    // Guardar en backend de forma silenciosa (no bloquea al usuario)
+    // Guardar en Firestore de forma silenciosa
     setTimeout(function(){ guardarCapturaEnBackend(data); }, 800);
   } catch(e) {
     alert('Error al generar PrintCard: ' + e.message);
@@ -1577,8 +1569,7 @@ const firebaseConfig = {
   measurementId:     "G-YBCZFTJE28"
 };
 firebase.initializeApp(firebaseConfig);
-const db      = firebase.firestore();
-const storage = firebase.storage();
+const db = firebase.firestore();
 
 // ── PANTALLA DE INICIO ─────────────────────────────────────────────
 function irANuevaCaptura() {
@@ -1634,8 +1625,8 @@ function renderCapturas(capturas) {
       '<td class="td-consec">' + (c.consecutivo || '—') + '</td>' +
       '<td>' + (c.asesor || '—') + '</td>' +
       '<td class="td-pdfs">' +
-        '<button class="btn-pdf-icon" onclick="descargarPDFCaptura(\'' + c.id + '\',\'datacard\')" title="Descargar DataCard">⬇ DC</button>' +
-        '<button class="btn-pdf-icon" onclick="descargarPDFCaptura(\'' + c.id + '\',\'printcard\')" title="Descargar PrintCard">⬇ PC</button>' +
+        '<button class="btn-pdf-icon" onclick="descargarPDFCaptura(\'' + c.id + '\',\'datacard\',this)" title="Descargar DataCard">⬇ DC</button>' +
+        '<button class="btn-pdf-icon" onclick="descargarPDFCaptura(\'' + c.id + '\',\'printcard\',this)" title="Descargar PrintCard">⬇ PC</button>' +
       '</td>' +
       '<td class="td-revisado">' +
         '<button class="revisado-toggle' + (revisado ? ' marcado' : '') + '" ' +
@@ -1648,19 +1639,59 @@ function renderCapturas(capturas) {
   }).join('');
 }
 
-async function descargarPDFCaptura(id, tipo) {
+async function descargarPDFCaptura(id, tipo, btn) {
+  const textoOriginal = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
   try {
-    const ref = storage.ref('pdfs/' + id + '_' + tipo + '.pdf');
-    const url = await ref.getDownloadURL();
-    const link = document.createElement('a');
-    link.href = url;
-    link.target = '_blank';
-    link.download = tipo + '_' + id + '.pdf';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Obtener datos de Firestore
+    const docSnap = await db.collection('capturas').doc(id).get();
+    if (!docSnap.exists) { alert('No se encontró la captura.'); return; }
+    const data = docSnap.data();
+    const { jsPDF } = window.jspdf;
+
+    if (tipo === 'datacard') {
+      // Renderizar DataCard en contenedor temporal
+      const tempDiv = document.createElement('div');
+      tempDiv.style.cssText = 'position:absolute;left:-9999px;top:0;';
+      tempDiv.innerHTML = generarDataCardHTML(data);
+      document.body.appendChild(tempDiv);
+      const canvas = await html2canvas(tempDiv.firstElementChild, { scale: 2, useCORS: true, backgroundColor: '#fff' });
+      document.body.removeChild(tempDiv);
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'letter' });
+      const pW = pdf.internal.pageSize.getWidth(), pH = pdf.internal.pageSize.getHeight();
+      const r = Math.min(pW / canvas.width, pH / canvas.height);
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG',
+        (pW - canvas.width * r) / 2, (pH - canvas.height * r) / 2, canvas.width * r, canvas.height * r);
+      pdf.save('DataCard_' + (data.consecutivo||'').replace(/\s/g,'_') + '_' + (data.cliente||'').replace(/\s/g,'_') + '.pdf');
+
+    } else {
+      // Renderizar PrintCard en contenedor temporal
+      const clone = poblarPlantilla(data);
+      const tempDiv = document.createElement('div');
+      tempDiv.style.cssText = 'position:absolute;left:-9999px;top:0;';
+      tempDiv.appendChild(clone);
+      document.body.appendChild(tempDiv);
+      const frente = tempDiv.querySelector('[data-screen-label*="Frente"]');
+      const reverso = tempDiv.querySelector('[data-screen-label*="Reverso"]');
+      const noLlevaReverso = data.registro_reverso && data.registro_reverso.toLowerCase().includes('n/a');
+      const paginas = (noLlevaReverso ? [frente] : [frente, reverso]).filter(Boolean);
+      const pdf2 = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'letter' });
+      const pW2 = pdf2.internal.pageSize.getWidth(), pH2 = pdf2.internal.pageSize.getHeight();
+      for (let i = 0; i < paginas.length; i++) {
+        const c = await html2canvas(paginas[i], { scale: 2, useCORS: true, backgroundColor: '#fff' });
+        const r = Math.min(pW2 / c.width, pH2 / c.height);
+        if (i > 0) pdf2.addPage();
+        pdf2.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG',
+          (pW2 - c.width * r) / 2, (pH2 - c.height * r) / 2, c.width * r, c.height * r);
+      }
+      document.body.removeChild(tempDiv);
+      pdf2.save('PrintCard_' + (data.consecutivo||'').replace(/\s/g,'_') + '_' + (data.cliente||'').replace(/\s/g,'_') + '.pdf');
+    }
   } catch(e) {
     alert('Error al descargar: ' + e.message);
+    console.error(e);
+  } finally {
+    if (btn) { btn.textContent = textoOriginal; btn.disabled = false; }
   }
 }
 
@@ -1680,72 +1711,24 @@ async function toggleRevisado(id, btn) {
   }
 }
 
-// ── GUARDAR CAPTURA EN FIREBASE ───────────────────────────────────
-// Se llama automáticamente al generar documentos (800ms después).
-// Sube los PDFs a Firebase Storage y guarda los metadatos en Firestore.
+// ── GUARDAR CAPTURA EN FIRESTORE ──────────────────────────────────
+// Guarda todos los campos del formulario. Los PDFs se regeneran
+// al descargar — no se almacena ningún archivo.
 async function guardarCapturaEnBackend(data) {
   try {
-    const { jsPDF } = window.jspdf;
-
-    // Convierte un elemento HTML a Blob PDF
-    async function elAPdfBlob(el) {
-      const c = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#fff' });
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'letter' });
-      const pW = pdf.internal.pageSize.getWidth();
-      const pH = pdf.internal.pageSize.getHeight();
-      const r = Math.min(pW / c.width, pH / c.height);
-      pdf.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG',
-        (pW - c.width * r) / 2, (pH - c.height * r) / 2, c.width * r, c.height * r);
-      return pdf.output('blob');
-    }
-
-    // Generar PDF del DataCard
-    const dcEl = document.getElementById('dc-preview').firstElementChild;
-    const dcBlob = await elAPdfBlob(dcEl);
-
-    // Generar PDF del PrintCard (frente + reverso)
-    const pdf2 = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'letter' });
-    const pW2 = pdf2.internal.pageSize.getWidth();
-    const pH2 = pdf2.internal.pageSize.getHeight();
-    const pags = [
-      document.getElementById('pc-frente').firstElementChild,
-      document.getElementById('pc-reverso').firstElementChild,
-    ].filter(Boolean);
-    for (let i = 0; i < pags.length; i++) {
-      const c = await html2canvas(pags[i], { scale: 2, useCORS: true, backgroundColor: '#fff' });
-      const r = Math.min(pW2 / c.width, pH2 / c.height);
-      if (i > 0) pdf2.addPage();
-      pdf2.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG',
-        (pW2 - c.width * r) / 2, (pH2 - c.height * r) / 2, c.width * r, c.height * r);
-    }
-    const pcBlob = pdf2.output('blob');
-
-    // Generar ID único para esta captura
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-
-    // Subir PDFs a Firebase Storage
-    const metaOpts = { contentType: 'application/pdf' };
-    await storage.ref('pdfs/' + id + '_datacard.pdf').put(dcBlob, metaOpts);
-    await storage.ref('pdfs/' + id + '_printcard.pdf').put(pcBlob, metaOpts);
-
-    // Guardar metadatos en Firestore
-    await db.collection('capturas').doc(id).set({
-      fecha:        data.fecha        || '',
-      cliente:      data.cliente      || '',
-      consecutivo:  data.consecutivo  || '',
-      asesor:       data.asesor       || '',
-      producto:     data.producto     || '',
-      codigo_unico: data.codigo_unico || '',
-      estado:       'Pendiente',
-      nombre_dc:    'DataCard_'   + (data.consecutivo||'').replace(/\s/g,'_') + '_' + (data.cliente||'').replace(/\s/g,'_') + '.pdf',
-      nombre_pc:    'PrintCard_'  + (data.consecutivo||'').replace(/\s/g,'_') + '_' + (data.cliente||'').replace(/\s/g,'_') + '.pdf',
-      creado_en:    firebase.firestore.FieldValue.serverTimestamp(),
+    const registro = Object.assign({}, data, {
+      estado:    'Pendiente',
+      creado_en: firebase.firestore.FieldValue.serverTimestamp(),
     });
-
-    console.log('[Zubex] Captura guardada en Firebase:', id);
+    // Firestore no acepta undefined
+    Object.keys(registro).forEach(function(k) {
+      if (registro[k] === undefined) registro[k] = '';
+    });
+    await db.collection('capturas').doc(id).set(registro);
+    console.log('[Zubex] Captura guardada en Firestore:', id);
   } catch(e) {
-    // No interrumpir al usuario — solo log silencioso
-    console.warn('[Zubex] No se pudo guardar en Firebase:', e.message);
+    console.warn('[Zubex] No se pudo guardar en Firestore:', e.message);
   }
 }
 
