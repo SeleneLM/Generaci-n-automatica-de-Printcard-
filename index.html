@@ -473,6 +473,10 @@ image-slot { display:block; background:#eef0f4; border-radius:6px; border:1.5px 
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 </head>
 <body>
 <!-- ══════════════════════════════════════════════
@@ -1561,36 +1565,20 @@ function validarYGenerarApp() {
 
 
 // ══════════════════════════════════════════════════════════════════
-// CONFIGURACIÓN DE API
-// Cambiar API_BASE_URL por la URL del servidor cuando TI lo configure
-// Ejemplo: 'http://192.168.1.50:3000'  o  'http://servidor-zubex:3000'
+// FIREBASE — Configuración y conexión
 // ══════════════════════════════════════════════════════════════════
-const API_BASE_URL = ''; // dejar vacío = mismo servidor (modo producción)
-// const API_BASE_URL = 'http://localhost:3000'; // Para pruebas locales
-
-async function apiGet(path) {
-  const r = await fetch(API_BASE_URL + path);
-  if (!r.ok) throw new Error('Error ' + r.status);
-  return r.json();
-}
-async function apiPost(path, body) {
-  const r = await fetch(API_BASE_URL + path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (!r.ok) throw new Error('Error ' + r.status);
-  return r.json();
-}
-async function apiPatch(path, body) {
-  const r = await fetch(API_BASE_URL + path, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (!r.ok) throw new Error('Error ' + r.status);
-  return r.json();
-}
+const firebaseConfig = {
+  apiKey:            "AIzaSyD4InWjLgUiOTNDTuVwHPEr-_4MpCYi4cY",
+  authDomain:        "proyecto-printcard.firebaseapp.com",
+  projectId:         "proyecto-printcard",
+  storageBucket:     "proyecto-printcard.firebasestorage.app",
+  messagingSenderId: "459326646513",
+  appId:             "1:459326646513:web:460d15cca5f1b16ebfa150",
+  measurementId:     "G-YBCZFTJE28"
+};
+firebase.initializeApp(firebaseConfig);
+const db      = firebase.firestore();
+const storage = firebase.storage();
 
 // ── PANTALLA DE INICIO ─────────────────────────────────────────────
 function irANuevaCaptura() {
@@ -1609,22 +1597,26 @@ function mostrarBanner(msg, tipo) {
 async function cargarCapturas() {
   const tbody = document.getElementById('capturas-tbody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon"><span class="spinner-inline"></span></div><p>Cargando capturas...</p></div></td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon"><span class="spinner-inline"></span></div><p>Cargando capturas...</p></div></td></tr>';
   const banner = document.getElementById('api-status-banner');
   if (banner) banner.style.display = 'none';
 
   try {
-    const capturas = await apiGet('/api/capturas');
+    const snapshot = await db.collection('capturas')
+      .orderBy('creado_en', 'desc')
+      .get();
+    const capturas = snapshot.docs.map(function(doc) {
+      return Object.assign({ id: doc.id }, doc.data());
+    });
     renderCapturas(capturas);
     if (banner) banner.style.display = 'none';
   } catch(e) {
     mostrarBanner(
-      '⚠️ <strong>No se pudo conectar al servidor.</strong> ' +
-      'Configura <code>API_BASE_URL</code> con la dirección que asigne TI, ' +
-      'o pídele a TI que levante el servidor (<code>server.js</code>).',
+      '⚠️ <strong>No se pudo conectar con Firebase.</strong> ' +
+      'Verifica que las reglas de Firestore permitan lectura, o revisa la consola del navegador.',
       'error'
     );
-    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">📂</div><p>Sin conexión al servidor — las capturas aparecerán aquí cuando TI configure el backend.</p></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">📂</div><p>Sin conexión — verifica las reglas de Firestore.</p></div></td></tr>';
   }
 }
 
@@ -1658,11 +1650,15 @@ function renderCapturas(capturas) {
 
 async function descargarPDFCaptura(id, tipo) {
   try {
-    const url = API_BASE_URL + '/api/capturas/' + id + '/' + tipo + '.pdf';
+    const ref = storage.ref('pdfs/' + id + '_' + tipo + '.pdf');
+    const url = await ref.getDownloadURL();
     const link = document.createElement('a');
     link.href = url;
+    link.target = '_blank';
     link.download = tipo + '_' + id + '.pdf';
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
   } catch(e) {
     alert('Error al descargar: ' + e.message);
   }
@@ -1672,27 +1668,27 @@ async function toggleRevisado(id, btn) {
   const yaRevisado = btn.classList.contains('marcado');
   const nuevoEstado = yaRevisado ? 'Pendiente' : 'Revisado';
   btn.style.opacity = '0.5';
+  // Actualización optimista inmediata
+  btn.classList.toggle('marcado', !yaRevisado);
+  btn.title = !yaRevisado ? 'Marcado como revisado — clic para desmarcar' : 'Marcar como revisado';
   try {
-    await apiPatch('/api/capturas/' + id, { estado: nuevoEstado });
-    btn.classList.toggle('marcado', !yaRevisado);
-    btn.title = !yaRevisado ? 'Marcado como revisado — clic para desmarcar' : 'Marcar como revisado';
+    await db.collection('capturas').doc(id).update({ estado: nuevoEstado });
   } catch(e) {
-    console.warn('No se pudo actualizar estado:', e.message);
-    // Actualización optimista: refleja el cambio aunque el servidor no responda
-    btn.classList.toggle('marcado', !yaRevisado);
+    console.warn('No se pudo actualizar estado en Firebase:', e.message);
   } finally {
     btn.style.opacity = '1';
   }
 }
 
-// ── GUARDAR CAPTURA EN BACKEND ────────────────────────────────────
-// Se llama automáticamente al generar documentos.
-// Genera ambos PDFs en base64 y los envía al servidor.
+// ── GUARDAR CAPTURA EN FIREBASE ───────────────────────────────────
+// Se llama automáticamente al generar documentos (800ms después).
+// Sube los PDFs a Firebase Storage y guarda los metadatos en Firestore.
 async function guardarCapturaEnBackend(data) {
   try {
     const { jsPDF } = window.jspdf;
 
-    async function elAPdfB64(el) {
+    // Convierte un elemento HTML a Blob PDF
+    async function elAPdfBlob(el) {
       const c = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#fff' });
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'letter' });
       const pW = pdf.internal.pageSize.getWidth();
@@ -1700,12 +1696,14 @@ async function guardarCapturaEnBackend(data) {
       const r = Math.min(pW / c.width, pH / c.height);
       pdf.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG',
         (pW - c.width * r) / 2, (pH - c.height * r) / 2, c.width * r, c.height * r);
-      return pdf.output('datauristring').split(',')[1];
+      return pdf.output('blob');
     }
 
+    // Generar PDF del DataCard
     const dcEl = document.getElementById('dc-preview').firstElementChild;
-    const dcB64 = await elAPdfB64(dcEl);
+    const dcBlob = await elAPdfBlob(dcEl);
 
+    // Generar PDF del PrintCard (frente + reverso)
     const pdf2 = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'letter' });
     const pW2 = pdf2.internal.pageSize.getWidth();
     const pH2 = pdf2.internal.pageSize.getHeight();
@@ -1720,25 +1718,34 @@ async function guardarCapturaEnBackend(data) {
       pdf2.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG',
         (pW2 - c.width * r) / 2, (pH2 - c.height * r) / 2, c.width * r, c.height * r);
     }
-    const pcB64 = pdf2.output('datauristring').split(',')[1];
+    const pcBlob = pdf2.output('blob');
 
-    await apiPost('/api/capturas', {
-      fecha:       data.fecha,
-      cliente:     data.cliente,
-      consecutivo: data.consecutivo,
-      asesor:      data.asesor,
-      producto:    data.producto,
-      codigo_unico: data.codigo_unico,
-      estado:      'Pendiente',
-      datacard_b64:  dcB64,
-      printcard_b64: pcB64,
-      nombre_dc:  'DataCard_' + (data.consecutivo||'').replace(/\s/g,'_') + '_' + (data.cliente||'').replace(/\s/g,'_') + '.pdf',
-      nombre_pc:  'PrintCard_' + (data.consecutivo||'').replace(/\s/g,'_') + '_' + (data.cliente||'').replace(/\s/g,'_') + '.pdf',
+    // Generar ID único para esta captura
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+    // Subir PDFs a Firebase Storage
+    const metaOpts = { contentType: 'application/pdf' };
+    await storage.ref('pdfs/' + id + '_datacard.pdf').put(dcBlob, metaOpts);
+    await storage.ref('pdfs/' + id + '_printcard.pdf').put(pcBlob, metaOpts);
+
+    // Guardar metadatos en Firestore
+    await db.collection('capturas').doc(id).set({
+      fecha:        data.fecha        || '',
+      cliente:      data.cliente      || '',
+      consecutivo:  data.consecutivo  || '',
+      asesor:       data.asesor       || '',
+      producto:     data.producto     || '',
+      codigo_unico: data.codigo_unico || '',
+      estado:       'Pendiente',
+      nombre_dc:    'DataCard_'   + (data.consecutivo||'').replace(/\s/g,'_') + '_' + (data.cliente||'').replace(/\s/g,'_') + '.pdf',
+      nombre_pc:    'PrintCard_'  + (data.consecutivo||'').replace(/\s/g,'_') + '_' + (data.cliente||'').replace(/\s/g,'_') + '.pdf',
+      creado_en:    firebase.firestore.FieldValue.serverTimestamp(),
     });
-    console.log('Captura guardada en servidor.');
+
+    console.log('[Zubex] Captura guardada en Firebase:', id);
   } catch(e) {
     // No interrumpir al usuario — solo log silencioso
-    console.warn('No se pudo guardar en backend:', e.message);
+    console.warn('[Zubex] No se pudo guardar en Firebase:', e.message);
   }
 }
 
