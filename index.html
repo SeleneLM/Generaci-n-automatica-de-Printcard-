@@ -311,7 +311,7 @@
 .btn-back:hover { background:rgba(255,255,255,.2); }
 .btn-dl { background:#e8a93c; color:#102554; border:none; border-radius:8px; padding:8px 18px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
 .btn-dl:hover { background:#f5ba4a; }
-image-slot { display:block; background:#eef0f4; border-radius:6px; border:1.5px dashed #c7ccd6; min-height:48px; }
+image-slot { display:block; min-height:48px; }
 #screen-formulario { display: block; }
 
 /* ── PANTALLA DE INICIO ── */
@@ -391,44 +391,57 @@ image-slot { display:block; background:#eef0f4; border-radius:6px; border:1.5px 
 }
 .td-cliente { font-weight: 700; }
 .td-consec { font-family: monospace; font-size: 12px; color: var(--azul-zubex); }
-.td-pdfs {
-  text-align: center;
-  white-space: nowrap;
+.chip-estado {
+  display: inline-block;
+  padding: 4px 11px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
 }
-.btn-pdf-icon {
-  background: none;
-  border: 1px solid var(--borde);
+.chip-pendiente {
+  background: #fff4e0;
+  color: #b36f00;
+  border: 1px solid #f5c46a;
+}
+.chip-aprobado {
+  background: #e6f4ed;
+  color: #1e7a45;
+  border: 1px solid #84d4a8;
+}
+.td-acciones {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.btn-accion {
+  background: #eaf0fb;
+  color: var(--azul-zubex);
+  border: 1px solid #b9cef0;
   border-radius: 6px;
-  padding: 5px 8px;
-  font-size: 12px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 700;
   cursor: pointer;
   font-family: inherit;
-  color: var(--azul-zubex);
-  transition: background 0.12s, border-color 0.12s;
-  margin: 0 2px;
+  white-space: nowrap;
+  transition: background 0.12s;
 }
-.btn-pdf-icon:hover { background: #eaf0fb; border-color: var(--azul-zubex); }
-.td-revisado { text-align: center; }
-.revisado-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px; height: 28px;
-  border-radius: 50%;
-  border: 2px solid var(--borde);
-  cursor: pointer;
-  background: var(--blanco);
-  transition: all 0.15s;
-  font-size: 14px;
-  color: transparent;
+.btn-accion:hover { background: #d4e4f7; }
+.btn-accion.aprobar {
+  background: #e6f4ed;
+  color: #1e7a45;
+  border-color: #84d4a8;
 }
-.revisado-toggle:hover { border-color: var(--ok); background: #f0faf4; }
-.revisado-toggle.marcado {
-  background: var(--ok);
-  border-color: var(--ok);
-  color: white;
-}
+.btn-accion.aprobar:hover { background: #cce9d9; }
 .btn-accion:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-accion.btn-eliminar {
+  background: #fbeaea;
+  color: var(--error);
+  border-color: #f0c0c0;
+  padding: 5px 9px;
+}
+.btn-accion.btn-eliminar:hover { background: #f6d5d5; }
 .empty-state {
   text-align: center;
   padding: 60px 20px;
@@ -473,9 +486,94 @@ image-slot { display:block; background:#eef0f4; border-radius:6px; border:1.5px 
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<!-- Firebase SDK (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+/* ── MODO DISEÑADOR ── */
+.designer-badge {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  background: rgba(232,169,60,0.18);
+  border: 1px solid var(--acento);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--acento);
+}
+.designer-badge .cerrar-designer {
+  cursor: pointer;
+  font-size: 15px;
+  margin-left: 4px;
+  opacity: 0.75;
+}
+.designer-badge .cerrar-designer:hover { opacity: 1; }
+.btn-lock {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.6);
+  border-radius: 8px;
+  padding: 7px 13px;
+  font-size: 17px;
+  cursor: pointer;
+  line-height: 1;
+  transition: all 0.15s;
+}
+.btn-lock:hover { border-color: rgba(255,255,255,0.6); color: white; }
+.btn-depuracion {
+  display: none;
+  background: #fff0f0;
+  color: #8a1e1e;
+  border: 1px solid #f5a0a0;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.btn-depuracion:hover { background: #ffe0e0; }
+/* ── OVERLAY PIN ── */
+#pin-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(16,37,84,0.6);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.pin-modal {
+  background: white;
+  border-radius: 14px;
+  padding: 30px 32px;
+  max-width: 360px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.pin-modal h3 { margin: 0 0 6px; color: var(--azul-oscuro); font-size: 18px; }
+.pin-modal p  { margin: 0 0 20px; color: var(--texto-suave); font-size: 13px; }
+#pin-input {
+  width: 100%;
+  padding: 13px;
+  font-size: 22px;
+  letter-spacing: 8px;
+  text-align: center;
+  border: 1.5px solid var(--borde);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-family: monospace;
+}
+#pin-input:focus { outline: none; border-color: var(--azul-zubex); box-shadow: 0 0 0 3px rgba(27,58,122,0.12); }
+#pin-error { color: var(--error); font-size: 13px; margin-bottom: 10px; display: none; }
+.pin-modal .pin-btns { display: flex; gap: 10px; margin-top: 4px; }
+.pin-modal .pin-btns button { flex: 1; padding: 11px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; border: 1px solid var(--borde); }
+.pin-modal .pin-btns .btn-ok { background: var(--azul-zubex); color: white; border-color: var(--azul-zubex); }
+.pin-modal .pin-btns .btn-ok:hover { background: var(--azul-oscuro); }
+</style>
 </head>
 <body>
 <!-- ══════════════════════════════════════════════
@@ -487,7 +585,18 @@ image-slot { display:block; background:#eef0f4; border-radius:6px; border:1.5px 
       <div class="logo">zubex</div>
       <div class="subtitle">Sistema de Capturas · Preprensa</div>
     </div>
-    <button class="btn-nuevo" onclick="irANuevaCaptura()">+ Nueva Captura</button>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <button class="btn-depuracion" id="btn-depuracion" onclick="confirmarDepuracion()">🗑 Depurar &gt;90 días</button>
+      <div class="designer-badge" id="designer-badge">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        Modo Diseño
+        <span class="cerrar-designer" onclick="desactivarModoDisenador()" title="Salir del modo diseño">×</span>
+      </div>
+      <button class="btn-lock" id="btn-lock" onclick="abrirModalPIN()" title="Modo Diseño">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </button>
+      <button class="btn-nuevo" onclick="irANuevaCaptura()">+ Nueva Captura</button>
+    </div>
   </div>
 
   <div class="capturas-container">
@@ -509,12 +618,13 @@ image-slot { display:block; background:#eef0f4; border-radius:6px; border:1.5px 
             <th>Cliente</th>
             <th>Consecutivo</th>
             <th>Asesor</th>
-            <th style="text-align:center;">PDFs</th>
-            <th style="text-align:center;">Revisado</th>
+            <th>Producto</th>
+            <th>Estado</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody id="capturas-tbody">
-          <tr><td colspan="6">
+          <tr><td colspan="7">
             <div class="empty-state">
               <div class="icon"><span class="spinner-inline"></span></div>
               <p>Cargando capturas...</p>
@@ -608,7 +718,7 @@ image-slot { display:block; background:#eef0f4; border-radius:6px; border:1.5px 
       </div>
 
       <div class="field">
-        <label>Código interno cliente <span class="opt">(opcional, N/A si no aplica)</span></label>
+        <label>Código interno cliente<span class="req">*</span> <span class="opt">(N/A si no aplica)</span></label>
         <input type="text" id="codigo-interno" placeholder="N/A" onchange="markFilled(this)">
       </div>
 
@@ -648,7 +758,7 @@ image-slot { display:block; background:#eef0f4; border-radius:6px; border:1.5px 
       </div>
 
       <div class="field">
-        <label>Igualar diseño a código o consecutivo <span class="opt">(N/A si no aplica)</span></label>
+        <label>Igualar diseño a código o consecutivo<span class="req">*</span> <span class="opt">(N/A si no aplica)</span></label>
         <input type="text" id="igualar" placeholder="Ej. TOR-014-09" onchange="markFilled(this)">
       </div>
 
@@ -826,7 +936,7 @@ image-slot { display:block; background:#eef0f4; border-radius:6px; border:1.5px 
       </div>
 
       <div class="field">
-        <label>Código de barras <span class="opt">(escribir N/A si no aplica)</span></label>
+        <label>Código de barras<span class="req">*</span> <span class="opt">(N/A si no aplica)</span></label>
         <input type="text" placeholder="N/A" onchange="markFilled(this)">
       </div>
 
@@ -893,12 +1003,12 @@ image-slot { display:block; background:#eef0f4; border-radius:6px; border:1.5px 
       </div>
 
       <div class="field">
-        <label>Área de impresión Frente</label>
+        <label>Área de impresión Frente<span class="req">*</span> <span class="opt">(N/A si no aplica)</span></label>
         <input type="text" placeholder="Ej. 150 x 250 mm" onchange="markFilled(this)">
       </div>
 
       <div class="field">
-        <label>Área de impresión Reverso</label>
+        <label>Área de impresión Reverso<span class="req">*</span> <span class="opt">(N/A si no aplica)</span></label>
         <input type="text" placeholder="Ej. 150 x 250 mm" onchange="markFilled(this)">
       </div>
 
@@ -1180,6 +1290,66 @@ function mostrarPantalla(id) {
 }
 function volverFormulario() { mostrarPantalla('screen-formulario'); }
 
+// ── NUEVA CAPTURA — limpia el formulario y va a pantalla formulario ─
+function nuevaCaptura() {
+  // Reiniciar todos los selects del formulario a su primera opción
+  document.querySelectorAll('#screen-formulario select').forEach(function(sel) {
+    sel.selectedIndex = 0;
+    // Disparar onchange para que los campos condicionales reaccionen
+    if (sel.onchange) try { sel.dispatchEvent(new Event('change')); } catch(e){}
+  });
+
+  // Limpiar todos los inputs de texto del formulario
+  document.querySelectorAll('#screen-formulario input[type="text"]').forEach(function(inp) {
+    if (!inp.disabled) inp.value = '';
+  });
+
+  // Deseleccionar todos los check-pills y radio-pills
+  document.querySelectorAll('#screen-formulario .check-pill.selected, #screen-formulario .radio-pill.selected').forEach(function(el) {
+    el.classList.remove('selected');
+  });
+
+  // Restaurar radio-pills con defaults
+  var sust = document.querySelector('.radio-pill[onclick*="sustituye"]');
+  if (sust) { sust.nextElementSibling && sust.nextElementSibling.classList.add('selected'); }
+  var cont = document.querySelector('.radio-pill[onclick*="continua"]');
+  if (cont) cont.classList.add('selected');
+  var regSi = document.querySelector('.radio-pill[onclick*="selectRegistro(this,\'si\')"]');
+  if (regSi) regSi.classList.add('selected');
+
+  // Reiniciar sección de tintas (borrar filas y crear una nueva vacía)
+  ['tintas-frente', 'tintas-reverso'].forEach(function(listId) {
+    var list = document.getElementById(listId);
+    if (!list) return;
+    list.innerHTML = '';
+    agregarTinta(listId);
+  });
+
+  // Actualizar botones de añadir tinta
+  ['tintas-frente', 'tintas-reverso'].forEach(function(listId) {
+    try { updateAddButtons(listId); } catch(e){}
+  });
+
+  // Aplicar onchange en material y presentación para restaurar estado visual
+  var mat = document.getElementById('material');
+  if (mat) { mat.selectedIndex = 0; try { onMaterialChange(mat); } catch(e){} }
+  var pres = document.getElementById('presentacion');
+  if (pres) { pres.selectedIndex = 0; try { onPresentacionChange(pres); } catch(e){} }
+  var tipImp = document.querySelector('.radio-pill[onclick*="continua"]');
+  if (tipImp) try { selectTipoImpresion(tipImp, 'continua'); } catch(e){}
+  var reg = document.querySelector('.radio-pill[onclick*="selectRegistro(this,\'si\')"]');
+  if (reg) try { selectRegistro(reg, 'si'); } catch(e){}
+
+  // Ocultar campos opcionales que puedan haber quedado visibles
+  var colorLibre = document.getElementById('color-libre');
+  if (colorLibre) colorLibre.style.display = 'none';
+  var prodLibre = document.getElementById('producto-libre');
+  if (prodLibre) prodLibre.style.display = 'none';
+
+  mostrarPantalla('screen-formulario');
+  window.scrollTo(0, 0);
+}
+
 // ─── CONSTRUIR DATOS PARA PRINTCARD ──────────────────────────────
 function construirDataPrintCard() {
   function gid(id) {
@@ -1309,60 +1479,174 @@ function construirDataPrintCard() {
 }
 
 
-// ─── CHIP TINTA (función compartida) ─────────────────────────────
-function chipTinta(nombre) {
-  const colores = {
-    'Cyan':'#00B4D8','Magenta':'#D63384','Amarillo':'#FFC107',
-    'Negro':'#1a1a1a','Blanco':'#ffffff','Reflex':'#001489','Barniz':'#cfd6e0',
-    '185C':'#C8102E','187C':'#B22222','485C':'#D22B2B','483C':'#6B3226',
-    '072C':'#001489','3005C':'#0076A8','123C':'#FFC72C',
-    '1245':'#C9A227','1795':'#C8102E','1955':'#6E1423',
-  };
-  let color = '#e0e0e0';
-  for (const k in colores) {
-    if (nombre.replace(/\s/g,'').toLowerCase().includes(k.toLowerCase())) {
-      color = colores[k]; break;
-    }
-  }
-  const light = ['#ffffff','#FFC107','#FFC72C','#C9A227','#cfd6e0','#e0e0e0'];
-  return `<span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e6f2;border-radius:18px;padding:4px 11px;font-size:10px;font-weight:600;margin:2px;"><span style="width:13px;height:13px;border-radius:50%;background:${color};border:1px solid #bbb;flex-shrink:0"></span><span style="color:#111">${nombre}</span></span>`;
-}
-
-// ─── HELPER: Poblar plantilla PrintCard con datos ─────────────────
-function poblarPlantilla(data) {
-  const tpl = document.getElementById('tpl-printcard');
-  const clone = tpl.cloneNode(true);
-  clone.removeAttribute('id');
-  // Reemplazar {{campo}} en nodos de texto
-  (function walk(node) {
-    if (node.nodeType === 3) {
-      node.textContent = node.textContent.replace(/\{\{(\w+)\}\}/g,
-        (_, k) => data[k] !== undefined ? data[k] : '');
-    } else { node.childNodes.forEach(walk); }
-  })(clone);
-  // Chips de tintas
-  ['frente','reverso'].forEach(function(lado) {
-    const container = clone.querySelector('[data-tintas="'+lado+'"]');
-    if (!container) return;
-    const tintas = (lado === 'frente' ? data.tintas_frente : data.tintas_reverso) || [];
-    const labelSpan = container.querySelector('span:first-child');
-    container.innerHTML = '';
-    if (labelSpan) container.appendChild(labelSpan);
-    if (tintas.length) {
-      tintas.forEach(function(t) { container.insertAdjacentHTML('beforeend', chipTinta(t)); });
-    } else {
-      container.insertAdjacentHTML('beforeend', '<span style="font-size:10px;color:#bbb;font-style:italic">N/A</span>');
-    }
+// ─── COMBINACIONES DE TINTAS → "SELECCIÓN A COLOR" ───────────────
+// Devuelve true si el array de tintas contiene TODOS los colores de alguna
+// de las combinaciones reconocidas como "selección a color".
+function esSeleccionColor(tintas) {
+  const COMBOS = [
+    ['Cyan','Magenta','Amarillo'],
+    ['Magenta','Amarillo','Negro'],
+    ['Cyan','Magenta','Amarillo','Negro'],
+    ['Cyan','Amarillo'],
+    ['Magenta','Amarillo']
+  ];
+  const set = (tintas || []).map(function(t){ return t.trim().toLowerCase(); });
+  return COMBOS.some(function(combo){
+    return combo.every(function(c){ return set.indexOf(c.toLowerCase()) !== -1; });
   });
-  return clone;
 }
+// HTML de la nota de selección a color (se inyecta tras los chips de tintas)
+const NOTA_SELECCION_COLOR =
+  '<div data-nota-seleccion style="margin-top:7px;padding:5px 12px;background:#eef2fc;'
+  + 'border-radius:8px;font-size:9.5px;font-weight:700;color:#060E9F;letter-spacing:.3px;">'
+  + '✦ Impresión: Selección a color</div>';
 
 // ─── GENERAR PRINTCARD ────────────────────────────────────────────
 function generarPrintCard() {
   try {
     const data = construirDataPrintCard();
     window._lastPrintCardData = data;
-    const clone = poblarPlantilla(data);
+    const tpl = document.getElementById('tpl-printcard');
+    const clone = tpl.cloneNode(true);
+    clone.removeAttribute('id');
+
+    // Reemplazar variables {{campo}} en nodos de texto
+    (function walk(node) {
+      if (node.nodeType === 3) {
+        node.textContent = node.textContent.replace(/\{\{(\w+)\}\}/g,
+          (_, k) => data[k] !== undefined ? data[k] : '');
+      } else { node.childNodes.forEach(walk); }
+    })(clone);
+
+    // Reemplazar chips de tintas hardcodeados por los del formulario
+    function chipTinta(nombre) {
+      const colores = {
+        // Proceso
+        'Cyan':'#00B4D8','Magenta':'#D63384','Amarillo':'#FFC107','Negro':'#1a1a1a',
+        // Especiales
+        'Blanco':'#ffffff','Barniz':'#cfd6e0',
+        // Azules / Reflex
+        'Reflex Blue':'#001489','Reflex':'#001489',
+        '072C':'#001489','072':'#001489',
+        '279C':'#418FDE','279':'#418FDE',
+        '2935C':'#0057A8','2935':'#0057A8',
+        '2945C':'#0065A3','2945':'#0065A3',
+        '3005C':'#0076A8','3005':'#0076A8',
+        '3015C':'#00678A','3015':'#00678A',
+        '281C':'#003087','281':'#003087',
+        '286C':'#003DA5','286':'#003DA5',
+        '294C':'#002D72','294':'#002D72',
+        '298C':'#62B5E5','298':'#62B5E5',
+        '300C':'#0065BD','300':'#0065BD',
+        '301C':'#00437A','301':'#00437A',
+        '302C':'#003057','302':'#003057',
+        // Rojos / Carmines
+        '185C':'#C8102E','185':'#C8102E',
+        '187C':'#B22222','187':'#B22222',
+        '200C':'#BA0C2F','200':'#BA0C2F',
+        '485C':'#DA291C','485':'#DA291C',
+        '199C':'#CC0033','199':'#CC0033',
+        '201C':'#8B1A2F','201':'#8B1A2F',
+        '484C':'#7C2D19','484':'#7C2D19',
+        '483C':'#6B3226','483':'#6B3226',
+        '1795C':'#C8102E','1795':'#C8102E',
+        '1955C':'#6E1423','1955':'#6E1423',
+        'Warm Red':'#F9423A',
+        // Naranjas
+        '021C':'#FE5000','021':'#FE5000',
+        '151C':'#FF7900','151':'#FF7900',
+        '165C':'#FF6720','165':'#FF6720',
+        '166C':'#FA4616','166':'#FA4616',
+        '021':'#FE5000',
+        // Amarillos / Dorados
+        '123C':'#FFC72C','123':'#FFC72C',
+        '124C':'#EEB211','124':'#EEB211',
+        '125C':'#C9930A','125':'#C9930A',
+        '1245C':'#C9A227','1245':'#C9A227',
+        '1255C':'#E0A126','1255':'#E0A126',
+        '109C':'#FFD100','109':'#FFD100',
+        '116C':'#FFCD00','116':'#FFCD00',
+        // Verdes
+        '347C':'#009A44','347':'#009A44',
+        '348C':'#007A33','348':'#007A33',
+        '355C':'#00843D','355':'#00843D',
+        '361C':'#43B02A','361':'#43B02A',
+        '364C':'#3A7728','364':'#3A7728',
+        '375C':'#78BE20','375':'#78BE20',
+        '376C':'#5C8A1E','376':'#5C8A1E',
+        'Green':'#00A550',
+        // Morados / Violetas
+        '267C':'#6A1F70','267':'#6A1F70',
+        '268C':'#511C74','268':'#511C74',
+        '269C':'#3D1152','269':'#3D1152',
+        '2603C':'#44116A','2603':'#44116A',
+        '2607C':'#391053','2607':'#391053',
+        '5175C':'#8B6690','5175':'#8B6690',
+        'Purple':'#BB29BB','Violet':'#440099',
+        // Rosas / Fucsia
+        '225C':'#D0006F','225':'#D0006F',
+        '226C':'#C5006B','226':'#C5006B',
+        '232C':'#E10098','232':'#E10098',
+        'Rubine Red':'#CE0058',
+        // Cafés / Tierra
+        '4625C':'#5C2C14','4625':'#5C2C14',
+        '4975C':'#492416','4975':'#492416',
+        // Grises / Metálicos
+        'Cool Gray 11':'#54585A','Cool Gray 9':'#76787B','Cool Gray 7':'#97999B',
+        'Cool Gray 5':'#B1B3B3','Cool Gray 3':'#C8C9C7','Cool Gray 1':'#D9D9D6',
+        '877C':'#8A8D8F','877':'#8A8D8F',
+        '8003C':'#A05C34','8003':'#A05C34',
+        'Silver':'#C0C0C0','Gold':'#CFB53B',
+        // Flúor / Neón
+        '803C':'#FF6EFF','803':'#FF6EFF',
+        '804C':'#FFAA4D','804':'#FFAA4D',
+        '805C':'#FF6666','805':'#FF6666',
+        '806C':'#FF3EB5','806':'#FF3EB5',
+        '807C':'#E5004E','807':'#E5004E',
+      };
+      // Longest-match-wins: find the key whose stripped version longest-matches inside the nombre
+      var stripped = nombre.replace(/\s/g,'').toLowerCase();
+      var bestKey = null, bestLen = 0;
+      for (var k in colores) {
+        var ks = k.replace(/\s/g,'').toLowerCase();
+        if (stripped.includes(ks) && ks.length > bestLen) {
+          bestKey = k; bestLen = ks.length;
+        }
+      }
+      var color = bestKey ? colores[bestKey] : '#e0e0e0';
+      // Luminance-based text color
+      function hexLum(hex) {
+        var r=parseInt(hex.slice(1,3),16)/255, g=parseInt(hex.slice(3,5),16)/255, b=parseInt(hex.slice(5,7),16)/255;
+        var toL = function(c){ return c<=0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055,2.4); };
+        return 0.2126*toL(r)+0.7152*toL(g)+0.0722*toL(b);
+      }
+      var textColor = hexLum(color) > 0.35 ? '#333' : '#fff';
+      return `<span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e6f2;border-radius:18px;padding:4px 11px;font-size:10px;font-weight:600;margin:2px;"><span style="width:13px;height:13px;border-radius:50%;background:${color};border:1px solid #bbb;flex-shrink:0"></span><span style="color:#111">${nombre}</span></span>`;
+    }
+
+    ['frente','reverso'].forEach(function(lado) {
+      const container = clone.querySelector('[data-tintas="'+lado+'"]');
+      if (!container) return;
+      const tintas = lado === 'frente' ? data.tintas_frente : data.tintas_reverso;
+      // Eliminar todos los chips existentes (mantener solo el label TINTAS)
+      const labelSpan = container.querySelector('span:first-child');
+      container.innerHTML = '';
+      if (labelSpan) container.appendChild(labelSpan);
+      // Agregar chips del formulario
+      if (tintas && tintas.length) {
+        tintas.forEach(function(t) {
+          container.insertAdjacentHTML('beforeend', chipTinta(t));
+        });
+      } else {
+        container.insertAdjacentHTML('beforeend', '<span style="font-size:10px;color:#bbb;font-style:italic">N/A</span>');
+      }
+    });
+
+    // Nota "Selección a color" si las tintas del frente coinciden con alguna combinación
+    if (esSeleccionColor(data.tintas_frente)) {
+      const frenteCont = clone.querySelector('[data-tintas="frente"]');
+      if (frenteCont) frenteCont.insertAdjacentHTML('afterend', NOTA_SELECCION_COLOR);
+    }
 
     const frente = clone.querySelector('[data-screen-label*="Frente"]');
     const reverso = clone.querySelector('[data-screen-label*="Reverso"]');
@@ -1370,25 +1654,32 @@ function generarPrintCard() {
     document.getElementById('pc-reverso').innerHTML = '';
     if (frente) document.getElementById('pc-frente').appendChild(frente);
 
-    const noLlevaReverso = data.registro_reverso &&
+    // Solo mostrar Reverso si el registro lleva reverso
+    const noLlevaReverso = data.registro_reverso && 
       data.registro_reverso.toLowerCase().includes('n/a');
+    const labelReverso = document.querySelector('.pc-label:last-of-type');
     if (noLlevaReverso) {
       document.getElementById('pc-reverso').style.display = 'none';
-      document.querySelectorAll('.pc-label').forEach(function(l) {
+      // Ocultar también el label "Reverso"
+      const labels = document.querySelectorAll('.pc-label');
+      labels.forEach(function(l) {
         if (l.textContent.includes('Reverso')) l.style.display = 'none';
       });
     } else {
       document.getElementById('pc-reverso').style.display = '';
       if (reverso) document.getElementById('pc-reverso').appendChild(reverso);
-      document.querySelectorAll('.pc-label').forEach(function(l) {
+      // Mostrar el label Reverso
+      const labels = document.querySelectorAll('.pc-label');
+      labels.forEach(function(l) {
         if (l.textContent.includes('Reverso')) l.style.display = '';
       });
     }
     document.getElementById('pc-subtitulo').textContent =
       (data.cliente||'') + ' — ' + (data.consecutivo||'');
+    // Generar preview del DataCard
     document.getElementById('dc-preview').innerHTML = generarDataCardHTML(data);
     mostrarPantalla('screen-printcard');
-    // Guardar en Firestore de forma silenciosa
+    // Guardar en backend de forma silenciosa (no bloquea al usuario)
     setTimeout(function(){ guardarCapturaEnBackend(data); }, 800);
   } catch(e) {
     alert('Error al generar PrintCard: ' + e.message);
@@ -1425,7 +1716,7 @@ async function descargarPrintCard() {
 }
 
 // ─── GENERADOR DE DATACARD HTML ──────────────────────────────────
-function generarDataCardHTML(data) {
+function generarDataCardHTML(data, selTiposOverride) {
   const AZUL = '#1b3a7a';
   const GRIS = '#6b7585';
   function sec(titulo, contenido) {
@@ -1447,8 +1738,10 @@ function generarDataCardHTML(data) {
   const tiposList = ['Nuevo','Cambio NO afecta diseño','Cambio en diseño','Muestra','Desarrollo',
     'Impresión 360','Cliente cuenta con muestra','Barniz','Reverso solo barniz',
     'Estándar de color','Confirma visita cliente'];
-  const selTipos = Array.from(document.querySelectorAll('.check-pill.selected'))
-    .map(function(e){ return e.textContent.trim(); });
+  const selTipos = selTiposOverride
+    ? selTiposOverride
+    : Array.from(document.querySelectorAll('.check-pill.selected'))
+        .map(function(e){ return e.textContent.trim(); });
 
   return '<div style="width:816px;background:#fff;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;padding:20px 24px;box-shadow:0 8px 32px rgba(0,0,0,.18)">'
     + '<div style="background:#102554;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;margin:-20px -24px 14px -24px">'
@@ -1518,6 +1811,15 @@ function validarYGenerarApp() {
     faltantes.push('Tipo de trabajo — selecciona al menos una opción');
   }
 
+  // Tintas frente — al menos una tinta con valor seleccionado
+  const tintasFrenteSelects = Array.from(
+    document.querySelectorAll('#tintas-frente .tinta-row select')
+  );
+  const tienteTintaFrente = tintasFrenteSelects.some(function(s){ return !!s.value; });
+  if (!tienteTintaFrente) {
+    faltantes.push('Tintas — Frente (selecciona al menos una tinta)');
+  }
+
   // Selects e inputs obligatorios
   document.querySelectorAll('.card-body .field').forEach(function(field) {
     const label = field.querySelector('label');
@@ -1528,17 +1830,26 @@ function validarYGenerarApp() {
     const inp = field.querySelector('input[type="text"]');
 
     if (sel) {
-      // Si el select tiene valor seleccionado, el campo está OK
-      // Solo fallar si no hay valor Y no es el caso "otro con input"
-      if (!sel.value) {
-        faltantes.push(label.textContent.replace('*','').replace(/\(.*\)/g,'').trim());
-      } else if (sel.value === 'otro') {
-        // Solo revisar el input si eligió "Otro"
-        if (inp && !inp.disabled && !inp.value.trim()) {
-          faltantes.push(label.textContent.replace('*','').replace(/\(.*\)/g,'').trim() + ' (especifica el valor)');
+      // Distinguir entre select principal (tiene opción vacía, ej. Zona/Asesor/Producto)
+      // y select de unidades (sin opción vacía, ej. pulg/mm en Ancho/Largo).
+      const esPrincipal = Array.from(sel.options).some(function(o){ return o.value === ''; });
+      if (esPrincipal) {
+        // Select principal — el campo requerido es el select
+        if (!sel.value) {
+          faltantes.push(label.textContent.replace('*','').replace(/\(.*\)/g,'').trim());
+        } else if (sel.value === 'otro') {
+          // El usuario eligió "Otro" — revisar el input libre
+          if (inp && !inp.disabled && !inp.value.trim()) {
+            faltantes.push(label.textContent.replace('*','').replace(/\(.*\)/g,'').trim() + ' (especifica el valor)');
+          }
+        }
+        // Cualquier otro valor en el select principal → campo OK
+      } else {
+        // Select de unidades (pulg/mm) — el campo requerido es el input numérico
+        if (inp && !inp.disabled && !inp.readOnly && !inp.value.trim()) {
+          faltantes.push(label.textContent.replace('*','').replace(/\(.*\)/g,'').trim());
         }
       }
-      // Si sel.value tiene cualquier otro valor → campo OK, no revisar input
     } else if (inp && !inp.disabled && !inp.readOnly) {
       if (!inp.value.trim()) {
         faltantes.push(label.textContent.replace('*','').replace(/\(.*\)/g,'').trim());
@@ -1557,7 +1868,7 @@ function validarYGenerarApp() {
 
 
 // ══════════════════════════════════════════════════════════════════
-// FIREBASE — Configuración y conexión
+// FIREBASE FIRESTORE
 // ══════════════════════════════════════════════════════════════════
 const firebaseConfig = {
   apiKey:            "AIzaSyD4InWjLgUiOTNDTuVwHPEr-_4MpCYi4cY",
@@ -1565,11 +1876,49 @@ const firebaseConfig = {
   projectId:         "proyecto-printcard",
   storageBucket:     "proyecto-printcard.firebasestorage.app",
   messagingSenderId: "459326646513",
-  appId:             "1:459326646513:web:460d15cca5f1b16ebfa150",
-  measurementId:     "G-YBCZFTJE28"
+  appId:             "1:459326646513:web:460d15cca5f1b16ebfa150"
 };
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
 const db = firebase.firestore();
+
+// ══════════════════════════════════════════════════════════════════
+// MODO DISEÑADORA — PIN
+// ── Cambiar el PIN aquí: ──────────────────────────────────────────
+const DESIGNER_PIN = '6520'; // <-- Modifica este valor por el PIN real
+// ═════════════════════════════════════════════════════════════════
+let modoDisenador = false;
+
+function abrirModalPIN() {
+  document.getElementById('pin-overlay').style.display = 'flex';
+  document.getElementById('pin-input').value = '';
+  document.getElementById('pin-error').style.display = 'none';
+  setTimeout(function(){ document.getElementById('pin-input').focus(); }, 80);
+}
+function cerrarModalPIN() {
+  document.getElementById('pin-overlay').style.display = 'none';
+}
+function verificarPIN() {
+  const pin = document.getElementById('pin-input').value.trim();
+  if (pin === DESIGNER_PIN) {
+    modoDisenador = true;
+    cerrarModalPIN();
+    document.getElementById('designer-badge').style.display = 'flex';
+    document.getElementById('btn-lock').style.display = 'none';
+    document.getElementById('btn-depuracion').style.display = '';
+    cargarCapturas();
+  } else {
+    document.getElementById('pin-error').style.display = 'block';
+    document.getElementById('pin-input').value = '';
+    document.getElementById('pin-input').focus();
+  }
+}
+function desactivarModoDisenador() {
+  modoDisenador = false;
+  document.getElementById('designer-badge').style.display = 'none';
+  document.getElementById('btn-lock').style.display = '';
+  document.getElementById('btn-depuracion').style.display = 'none';
+  cargarCapturas();
+}
 
 // ── PANTALLA DE INICIO ─────────────────────────────────────────────
 function irANuevaCaptura() {
@@ -1577,7 +1926,6 @@ function irANuevaCaptura() {
 }
 
 function mostrarBanner(msg, tipo) {
-  // tipo: 'info' | 'error' | 'ok'
   const el = document.getElementById('api-status-banner');
   if (!el) return;
   el.className = 'api-banner' + (tipo === 'error' ? ' error' : tipo === 'ok' ? ' ok' : '');
@@ -1585,150 +1933,347 @@ function mostrarBanner(msg, tipo) {
   el.style.display = 'flex';
 }
 
+// ── CARGAR CAPTURAS DESDE FIRESTORE ───────────────────────────────
 async function cargarCapturas() {
   const tbody = document.getElementById('capturas-tbody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon"><span class="spinner-inline"></span></div><p>Cargando capturas...</p></div></td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon"><span class="spinner-inline"></span></div><p>Cargando capturas...</p></div></td></tr>';
   const banner = document.getElementById('api-status-banner');
   if (banner) banner.style.display = 'none';
-
   try {
-    const snapshot = await db.collection('capturas')
-      .orderBy('creado_en', 'desc')
-      .get();
-    const capturas = snapshot.docs.map(function(doc) {
-      return Object.assign({ id: doc.id }, doc.data());
+    const snap = await db.collection('capturas').orderBy('creado_en', 'desc').get();
+    const capturas = snap.docs.map(function(d) {
+      const data = d.data();
+      // Convertir Timestamp a fecha legible si no hay campo fecha
+      if (!data.fecha && data.creado_en && data.creado_en.toDate) {
+        const dt = data.creado_en.toDate();
+        data.fecha = String(dt.getDate()).padStart(2,'0') + '/' +
+          String(dt.getMonth()+1).padStart(2,'0') + '/' + dt.getFullYear();
+      }
+      return Object.assign({ id: d.id }, data);
     });
     renderCapturas(capturas);
-    if (banner) banner.style.display = 'none';
   } catch(e) {
-    mostrarBanner(
-      '⚠️ <strong>No se pudo conectar con Firebase.</strong> ' +
-      'Verifica que las reglas de Firestore permitan lectura, o revisa la consola del navegador.',
-      'error'
-    );
-    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">📂</div><p>Sin conexión — verifica las reglas de Firestore.</p></div></td></tr>';
+    mostrarBanner('⚠️ <strong>Error al cargar capturas de Firestore:</strong> ' + e.message, 'error');
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">📂</div><p>No se pudo conectar con Firebase. Verifica tu conexión.</p></div></td></tr>';
   }
 }
 
+// ── RENDER DE TABLA ────────────────────────────────────────────────
 function renderCapturas(capturas) {
   const tbody = document.getElementById('capturas-tbody');
   if (!capturas || capturas.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">📋</div><p style="font-weight:700">Aún no hay capturas</p><p>Las capturas de Comercial aparecerán aquí.</p></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">📋</div><p style="font-weight:700">Aún no hay capturas</p><p>Las capturas de Comercial aparecerán aquí.</p></div></td></tr>';
     return;
   }
   tbody.innerHTML = capturas.map(function(c) {
-    const revisado = c.estado === 'Revisado';
+    const esRevisado = c.estado === 'Revisado';
+    const chipClass = esRevisado ? 'chip-aprobado' : 'chip-pendiente';
+    const chipLabel = esRevisado ? '✓ Revisado' : '● Pendiente';
+    const btnRevisado = modoDisenador
+      ? '<button class="btn-accion ' + (esRevisado ? 'aprobar' : '') + '" onclick="toggleRevisado(\'' + c.id + '\', this)">' +
+        (esRevisado ? '↺ Pendiente' : '✓ Revisado') + '</button>'
+      : '';
+    const btnEliminar = modoDisenador
+      ? '<button class="btn-accion btn-eliminar" onclick="eliminarCaptura(\'' + c.id + '\', this)" title="Eliminar captura">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>' +
+        '</button>'
+      : '';
     return '<tr>' +
       '<td>' + (c.fecha || '—') + '</td>' +
       '<td class="td-cliente">' + (c.cliente || '—') + '</td>' +
       '<td class="td-consec">' + (c.consecutivo || '—') + '</td>' +
       '<td>' + (c.asesor || '—') + '</td>' +
-      '<td class="td-pdfs">' +
-        '<button class="btn-pdf-icon" onclick="descargarPDFCaptura(\'' + c.id + '\',\'datacard\',this)" title="Descargar DataCard">⬇ DC</button>' +
-        '<button class="btn-pdf-icon" onclick="descargarPDFCaptura(\'' + c.id + '\',\'printcard\',this)" title="Descargar PrintCard">⬇ PC</button>' +
-      '</td>' +
-      '<td class="td-revisado">' +
-        '<button class="revisado-toggle' + (revisado ? ' marcado' : '') + '" ' +
-          'onclick="toggleRevisado(\'' + c.id + '\', this)" ' +
-          'title="' + (revisado ? 'Marcado como revisado — clic para desmarcar' : 'Marcar como revisado') + '">' +
-          '✓' +
-        '</button>' +
-      '</td>' +
+      '<td>' + (c.producto || '—') + '</td>' +
+      '<td><span class="chip-estado ' + chipClass + '">' + chipLabel + '</span></td>' +
+      '<td><div class="td-acciones">' +
+        '<button class="btn-accion" onclick="descargarPDFCaptura(\'' + c.id + '\',\'datacard\',this)" title="Descargar DataCard">⬇ DataCard</button>' +
+        '<button class="btn-accion" onclick="descargarPDFCaptura(\'' + c.id + '\',\'printcard\',this)" title="Descargar PrintCard">⬇ PrintCard</button>' +
+        btnRevisado +
+        btnEliminar +
+      '</div></td>' +
     '</tr>';
   }).join('');
 }
 
-async function descargarPDFCaptura(id, tipo, btn) {
-  const textoOriginal = btn ? btn.textContent : '';
-  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
+// ── TOGGLE REVISADO (solo diseñadoras) ────────────────────────────
+async function toggleRevisado(id, btn) {
+  btn.disabled = true;
+  const textoOrig = btn.textContent;
+  btn.textContent = '...';
   try {
-    // Obtener datos de Firestore
-    const docSnap = await db.collection('capturas').doc(id).get();
-    if (!docSnap.exists) { alert('No se encontró la captura.'); return; }
-    const data = docSnap.data();
-    const { jsPDF } = window.jspdf;
+    const docRef = db.collection('capturas').doc(id);
+    const snap = await docRef.get();
+    const actual = snap.exists ? snap.data().estado : 'Pendiente';
+    const nuevo = actual === 'Revisado' ? 'Pendiente' : 'Revisado';
+    await docRef.update({ estado: nuevo });
+    cargarCapturas();
+  } catch(e) {
+    alert('Error al actualizar estado: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = textoOrig;
+  }
+}
 
+// ── ELIMINAR CAPTURA (solo modo diseño) ───────────────────────────
+async function eliminarCaptura(id, btn) {
+  if (!confirm('¿Eliminar esta captura permanentemente? Esta acción no se puede deshacer.')) return;
+  btn.disabled = true;
+  try {
+    await db.collection('capturas').doc(id).delete();
+    cargarCapturas();
+  } catch(e) {
+    alert('Error al eliminar: ' + e.message);
+    btn.disabled = false;
+  }
+}
+
+// ── DESCARGAR PDF DESDE FIRESTORE (regenera client-side) ──────────
+async function descargarPDFCaptura(id, tipo, btn) {
+  const textoOrig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳';
+  try {
+    const snap = await db.collection('capturas').doc(id).get();
+    if (!snap.exists) { alert('Captura no encontrada en Firestore.'); return; }
+    const data = Object.assign({ id: snap.id }, snap.data());
     if (tipo === 'datacard') {
-      // Renderizar DataCard en contenedor temporal
-      const tempDiv = document.createElement('div');
-      tempDiv.style.cssText = 'position:absolute;left:-9999px;top:0;';
-      tempDiv.innerHTML = generarDataCardHTML(data);
-      document.body.appendChild(tempDiv);
-      const canvas = await html2canvas(tempDiv.firstElementChild, { scale: 2, useCORS: true, backgroundColor: '#fff' });
-      document.body.removeChild(tempDiv);
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'letter' });
-      const pW = pdf.internal.pageSize.getWidth(), pH = pdf.internal.pageSize.getHeight();
-      const r = Math.min(pW / canvas.width, pH / canvas.height);
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG',
-        (pW - canvas.width * r) / 2, (pH - canvas.height * r) / 2, canvas.width * r, canvas.height * r);
-      pdf.save('DataCard_' + (data.consecutivo||'').replace(/\s/g,'_') + '_' + (data.cliente||'').replace(/\s/g,'_') + '.pdf');
-
+      await regenerarYDescargarDataCard(data);
     } else {
-      // Renderizar PrintCard en contenedor temporal
-      const clone = poblarPlantilla(data);
-      const tempDiv = document.createElement('div');
-      tempDiv.style.cssText = 'position:absolute;left:-9999px;top:0;';
-      tempDiv.appendChild(clone);
-      document.body.appendChild(tempDiv);
-      const frente = tempDiv.querySelector('[data-screen-label*="Frente"]');
-      const reverso = tempDiv.querySelector('[data-screen-label*="Reverso"]');
-      const noLlevaReverso = data.registro_reverso && data.registro_reverso.toLowerCase().includes('n/a');
-      const paginas = (noLlevaReverso ? [frente] : [frente, reverso]).filter(Boolean);
-      const pdf2 = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'letter' });
-      const pW2 = pdf2.internal.pageSize.getWidth(), pH2 = pdf2.internal.pageSize.getHeight();
-      for (let i = 0; i < paginas.length; i++) {
-        const c = await html2canvas(paginas[i], { scale: 2, useCORS: true, backgroundColor: '#fff' });
-        const r = Math.min(pW2 / c.width, pH2 / c.height);
-        if (i > 0) pdf2.addPage();
-        pdf2.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG',
-          (pW2 - c.width * r) / 2, (pH2 - c.height * r) / 2, c.width * r, c.height * r);
-      }
-      document.body.removeChild(tempDiv);
-      pdf2.save('PrintCard_' + (data.consecutivo||'').replace(/\s/g,'_') + '_' + (data.cliente||'').replace(/\s/g,'_') + '.pdf');
+      await regenerarYDescargarPrintCard(data);
     }
   } catch(e) {
     alert('Error al descargar: ' + e.message);
     console.error(e);
   } finally {
-    if (btn) { btn.textContent = textoOriginal; btn.disabled = false; }
+    btn.disabled = false;
+    btn.textContent = textoOrig;
   }
 }
 
-async function toggleRevisado(id, btn) {
-  const yaRevisado = btn.classList.contains('marcado');
-  const nuevoEstado = yaRevisado ? 'Pendiente' : 'Revisado';
-  btn.style.opacity = '0.5';
-  // Actualización optimista inmediata
-  btn.classList.toggle('marcado', !yaRevisado);
-  btn.title = !yaRevisado ? 'Marcado como revisado — clic para desmarcar' : 'Marcar como revisado';
+// ── REGENERAR DataCard PDF ─────────────────────────────────────────
+async function regenerarYDescargarDataCard(data) {
+  const { jsPDF } = window.jspdf;
+  const selTipos = data.tipo_trabajo ? data.tipo_trabajo.split(' · ').map(function(s){ return s.trim(); }) : [];
+  const container = document.createElement('div');
+  container.style.cssText = 'position:absolute;left:-9999px;top:0;';
+  container.innerHTML = generarDataCardHTML(data, selTipos);
+  document.body.appendChild(container);
   try {
-    await db.collection('capturas').doc(id).update({ estado: nuevoEstado });
-  } catch(e) {
-    console.warn('No se pudo actualizar estado en Firebase:', e.message);
+    const el = container.firstElementChild;
+    const pdf = new jsPDF({ orientation:'portrait', unit:'px', format:'letter' });
+    const pW = pdf.internal.pageSize.getWidth();
+    const pH = pdf.internal.pageSize.getHeight();
+    const canvas = await html2canvas(el, { scale:2, useCORS:true, backgroundColor:'#fff' });
+    const img = canvas.toDataURL('image/jpeg', 0.92);
+    const r = Math.min(pW/canvas.width, pH/canvas.height);
+    pdf.addImage(img,'JPEG',(pW-canvas.width*r)/2,(pH-canvas.height*r)/2,canvas.width*r,canvas.height*r);
+    pdf.save('DataCard_'+(data.consecutivo||'').replace(/\s/g,'_')+'_'+(data.cliente||'').replace(/\s/g,'_')+'.pdf');
   } finally {
-    btn.style.opacity = '1';
+    document.body.removeChild(container);
+  }
+}
+
+// ── REGENERAR PrintCard PDF ────────────────────────────────────────
+async function regenerarYDescargarPrintCard(data) {
+  const { jsPDF } = window.jspdf;
+  const tpl = document.getElementById('tpl-printcard');
+  const clone = tpl.cloneNode(true);
+  clone.removeAttribute('id');
+  clone.style.cssText = 'display:block;position:absolute;left:-9999px;top:0;';
+
+  // Reemplazar variables {{campo}}
+  (function walk(node) {
+    if (node.nodeType === 3) {
+      node.textContent = node.textContent.replace(/\{\{(\w+)\}\}/g,
+        function(_, k){ return data[k] !== undefined ? data[k] : ''; });
+    } else { node.childNodes.forEach(walk); }
+  })(clone);
+
+  // Helper chip de tinta
+  function chipTintaLocal(nombre) {
+    var colores = {
+      // Proceso
+      'Cyan':'#00B4D8','Magenta':'#D63384','Amarillo':'#FFC107','Negro':'#1a1a1a',
+      // Especiales
+      'Blanco':'#ffffff','Barniz':'#cfd6e0',
+      // Azules / Reflex
+      'Reflex Blue':'#001489','Reflex':'#001489',
+      '072C':'#001489','072':'#001489',
+      '279C':'#418FDE','279':'#418FDE',
+      '2935C':'#0057A8','2935':'#0057A8',
+      '2945C':'#0065A3','2945':'#0065A3',
+      '3005C':'#0076A8','3005':'#0076A8',
+      '3015C':'#00678A','3015':'#00678A',
+      '281C':'#003087','281':'#003087',
+      '286C':'#003DA5','286':'#003DA5',
+      '294C':'#002D72','294':'#002D72',
+      '298C':'#62B5E5','298':'#62B5E5',
+      '300C':'#0065BD','300':'#0065BD',
+      '301C':'#00437A','301':'#00437A',
+      '302C':'#003057','302':'#003057',
+      // Rojos / Carmines
+      '185C':'#C8102E','185':'#C8102E',
+      '187C':'#B22222','187':'#B22222',
+      '200C':'#BA0C2F','200':'#BA0C2F',
+      '485C':'#DA291C','485':'#DA291C',
+      '199C':'#CC0033','199':'#CC0033',
+      '201C':'#8B1A2F','201':'#8B1A2F',
+      '484C':'#7C2D19','484':'#7C2D19',
+      '483C':'#6B3226','483':'#6B3226',
+      '1795C':'#C8102E','1795':'#C8102E',
+      '1955C':'#6E1423','1955':'#6E1423',
+      'Warm Red':'#F9423A',
+      // Naranjas
+      '021C':'#FE5000','021':'#FE5000',
+      '151C':'#FF7900','151':'#FF7900',
+      '165C':'#FF6720','165':'#FF6720',
+      '166C':'#FA4616','166':'#FA4616',
+      // Amarillos / Dorados
+      '123C':'#FFC72C','123':'#FFC72C',
+      '124C':'#EEB211','124':'#EEB211',
+      '125C':'#C9930A','125':'#C9930A',
+      '1245C':'#C9A227','1245':'#C9A227',
+      '1255C':'#E0A126','1255':'#E0A126',
+      '109C':'#FFD100','109':'#FFD100',
+      '116C':'#FFCD00','116':'#FFCD00',
+      // Verdes
+      '347C':'#009A44','347':'#009A44',
+      '348C':'#007A33','348':'#007A33',
+      '355C':'#00843D','355':'#00843D',
+      '361C':'#43B02A','361':'#43B02A',
+      '364C':'#3A7728','364':'#3A7728',
+      '375C':'#78BE20','375':'#78BE20',
+      '376C':'#5C8A1E','376':'#5C8A1E',
+      'Green':'#00A550',
+      // Morados / Violetas
+      '267C':'#6A1F70','267':'#6A1F70',
+      '268C':'#511C74','268':'#511C74',
+      '269C':'#3D1152','269':'#3D1152',
+      '2603C':'#44116A','2603':'#44116A',
+      '2607C':'#391053','2607':'#391053',
+      '5175C':'#8B6690','5175':'#8B6690',
+      'Purple':'#BB29BB','Violet':'#440099',
+      // Rosas / Fucsia
+      '225C':'#D0006F','225':'#D0006F',
+      '226C':'#C5006B','226':'#C5006B',
+      '232C':'#E10098','232':'#E10098',
+      'Rubine Red':'#CE0058',
+      // Cafés / Tierra
+      '4625C':'#5C2C14','4625':'#5C2C14',
+      '4975C':'#492416','4975':'#492416',
+      // Grises / Metálicos
+      'Cool Gray 11':'#54585A','Cool Gray 9':'#76787B','Cool Gray 7':'#97999B',
+      'Cool Gray 5':'#B1B3B3','Cool Gray 3':'#C8C9C7','Cool Gray 1':'#D9D9D6',
+      '877C':'#8A8D8F','877':'#8A8D8F',
+      '8003C':'#A05C34','8003':'#A05C34',
+      'Silver':'#C0C0C0','Gold':'#CFB53B',
+      // Flúor / Neón
+      '803C':'#FF6EFF','803':'#FF6EFF',
+      '804C':'#FFAA4D','804':'#FFAA4D',
+      '805C':'#FF6666','805':'#FF6666',
+      '806C':'#FF3EB5','806':'#FF3EB5',
+      '807C':'#E5004E','807':'#E5004E',
+    };
+    // Longest-match-wins
+    var stripped = nombre.replace(/\s/g,'').toLowerCase();
+    var bestKey = null, bestLen = 0;
+    for (var k in colores) {
+      var ks = k.replace(/\s/g,'').toLowerCase();
+      if (stripped.includes(ks) && ks.length > bestLen) { bestKey = k; bestLen = ks.length; }
+    }
+    var color = bestKey ? colores[bestKey] : '#e0e0e0';
+    // Luminance-based text color
+    function hexLum(hex) {
+      var r=parseInt(hex.slice(1,3),16)/255, g=parseInt(hex.slice(3,5),16)/255, b=parseInt(hex.slice(5,7),16)/255;
+      var toL = function(c){ return c<=0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055,2.4); };
+      return 0.2126*toL(r)+0.7152*toL(g)+0.0722*toL(b);
+    }
+    return '<span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e6f2;border-radius:18px;padding:4px 11px;font-size:10px;font-weight:600;margin:2px;">'
+      + '<span style="width:13px;height:13px;border-radius:50%;background:'+color+';border:1px solid #bbb;flex-shrink:0"></span>'
+      + '<span style="color:#111">'+nombre+'</span></span>';
+  }
+
+  ['frente','reverso'].forEach(function(lado) {
+    const cont = clone.querySelector('[data-tintas="'+lado+'"]');
+    if (!cont) return;
+    const tintas = lado === 'frente' ? (data.tintas_frente || []) : (data.tintas_reverso || []);
+    const labelSpan = cont.querySelector('span:first-child');
+    cont.innerHTML = '';
+    if (labelSpan) cont.appendChild(labelSpan);
+    if (tintas && tintas.length) {
+      tintas.forEach(function(t){ cont.insertAdjacentHTML('beforeend', chipTintaLocal(t)); });
+    } else {
+      cont.insertAdjacentHTML('beforeend','<span style="font-size:10px;color:#bbb;font-style:italic">N/A</span>');
+    }
+  });
+
+  // Nota "Selección a color" si las tintas del frente coinciden con alguna combinación
+  if (esSeleccionColor(data.tintas_frente)) {
+    const frenteCont = clone.querySelector('[data-tintas="frente"]');
+    if (frenteCont) frenteCont.insertAdjacentHTML('afterend', NOTA_SELECCION_COLOR);
+  }
+
+  document.body.appendChild(clone);
+  try {
+    const pdf = new jsPDF({ orientation:'portrait', unit:'px', format:'letter' });
+    const pW = pdf.internal.pageSize.getWidth();
+    const pH = pdf.internal.pageSize.getHeight();
+    const pags = Array.from(clone.querySelectorAll('[data-template] > div'));
+    const noReverso = data.registro_reverso && data.registro_reverso.toLowerCase().includes('n/a');
+    const pagsFin = noReverso ? pags.slice(0,1) : pags;
+    for (var i=0; i<pagsFin.length; i++) {
+      const c = await html2canvas(pagsFin[i], {scale:2, useCORS:true, backgroundColor:'#fff'});
+      const img = c.toDataURL('image/jpeg', 0.92);
+      const r = Math.min(pW/c.width, pH/c.height);
+      if (i>0) pdf.addPage();
+      pdf.addImage(img,'JPEG',(pW-c.width*r)/2,(pH-c.height*r)/2,c.width*r,c.height*r);
+    }
+    pdf.save('PrintCard_'+(data.consecutivo||'').replace(/\s/g,'_')+'_'+(data.cliente||'').replace(/\s/g,'_')+'.pdf');
+  } finally {
+    document.body.removeChild(clone);
+  }
+}
+
+// ── DEPURACIÓN TRIMESTRAL (solo diseñadoras) ───────────────────────
+async function confirmarDepuracion() {
+  const hace90 = new Date();
+  hace90.setDate(hace90.getDate() - 90);
+  const limite = firebase.firestore.Timestamp.fromDate(hace90);
+  try {
+    const snap = await db.collection('capturas').where('creado_en','<',limite).get();
+    if (snap.empty) {
+      alert('No hay capturas de más de 90 días para eliminar. ✓');
+      return;
+    }
+    const ok = confirm(
+      '⚠️ DEPURACIÓN\n\nSe eliminarán ' + snap.docs.length + ' captura(s) de más de 90 días.\n\nEsta acción no se puede deshacer. ¿Continuar?'
+    );
+    if (!ok) return;
+    const batch = db.batch();
+    snap.docs.forEach(function(d){ batch.delete(d.ref); });
+    await batch.commit();
+    alert('✓ ' + snap.docs.length + ' captura(s) eliminadas correctamente.');
+    cargarCapturas();
+  } catch(e) {
+    alert('Error en depuración: ' + e.message);
   }
 }
 
 // ── GUARDAR CAPTURA EN FIRESTORE ──────────────────────────────────
-// Guarda todos los campos del formulario. Los PDFs se regeneran
-// al descargar — no se almacena ningún archivo.
+// Guarda todos los campos del formulario (sin PDFs — se regeneran al descargar)
 async function guardarCapturaEnBackend(data) {
   try {
-    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    const registro = Object.assign({}, data, {
-      estado:    'Pendiente',
-      creado_en: firebase.firestore.FieldValue.serverTimestamp(),
-    });
-    // Firestore no acepta undefined
-    Object.keys(registro).forEach(function(k) {
-      if (registro[k] === undefined) registro[k] = '';
-    });
-    await db.collection('capturas').doc(id).set(registro);
-    console.log('[Zubex] Captura guardada en Firestore:', id);
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+    await db.collection('capturas').doc(id).set(
+      Object.assign({}, data, {
+        estado:     'Pendiente',
+        creado_en:  firebase.firestore.FieldValue.serverTimestamp()
+      })
+    );
+    console.log('Captura guardada en Firestore:', id);
   } catch(e) {
-    console.warn('[Zubex] No se pudo guardar en Firestore:', e.message);
+    console.warn('No se pudo guardar en Firestore:', e.message);
   }
 }
 
@@ -1778,6 +2323,7 @@ function getCorreoAsesor() {
     </div>
     <div style="display:flex;gap:10px;align-items:center;">
       <button class="btn-back" onclick="volverFormulario()">← Volver</button>
+      <button class="btn-back" onclick="nuevaCaptura()" style="background:rgba(232,169,60,.18);border-color:rgba(232,169,60,.4);color:#f5d280;">+ Nueva captura</button>
       <button class="btn-dl" id="btn-dl-datacard" onclick="descargarDataCard()">
         <span id="btn-dc-txt">⬇ DataCard PDF</span>
       </button>
@@ -2048,6 +2594,28 @@ function getCorreoAsesor() {
             <p style="margin:0;font-size:6.4px;line-height:1.35;color:#9097ad;text-align:justify;">Esta representación se desarrolló con base en los datos y textos legales proporcionados por el cliente. Zubex Industrial no será responsable por daños derivados de la información aquí contenida. Para impresión digital, los pantones se convierten al formato digital; favor de utilizar la guía Pantone® como referencia de color. La presente impresión es para aprobación de información: mediante su firma, usted acepta que el producto se imprima exactamente como se presenta en este Print Card. DSI: distancia de sello a impresión.</p>
           </div>
 </div>
+</div>
+<!-- ── MODAL PIN DISEÑADOR ─────────────────────────────────── -->
+<div id="pin-overlay" onclick="cerrarModalPIN()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;align-items:center;justify-content:center;">
+  <div class="pin-modal" onclick="event.stopPropagation()">
+    <h3 style="margin:0 0 6px;color:#1b3a7a;font-size:18px;">🔒 Acceso Diseñadoras</h3>
+    <p style="margin:0 0 18px;font-size:13px;color:#6b7585;">Ingresa el PIN para activar el modo diseñadora.</p>
+    <input
+      id="pin-input"
+      type="password"
+      inputmode="numeric"
+      pattern="[0-9]*"
+      maxlength="8"
+      placeholder="PIN numérico"
+      onkeydown="if(event.key==='Enter') verificarPIN();"
+      style="width:100%;padding:10px 14px;font-size:18px;letter-spacing:6px;border:1.5px solid #d7dce5;border-radius:8px;text-align:center;outline:none;margin-bottom:8px;"
+    />
+    <p id="pin-error" style="display:none;color:#c0392b;font-size:12px;margin:0 0 10px;text-align:center;">PIN incorrecto. Intenta de nuevo.</p>
+    <div style="display:flex;gap:10px;margin-top:4px;">
+      <button onclick="verificarPIN()" style="flex:1;padding:10px;background:#1b3a7a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">Verificar</button>
+      <button onclick="cerrarModalPIN()" style="flex:1;padding:10px;background:#f4f6fa;color:#1f2733;border:1px solid #d7dce5;border-radius:8px;font-size:14px;cursor:pointer;">Cancelar</button>
+    </div>
+  </div>
 </div>
 </body>
 </html>
