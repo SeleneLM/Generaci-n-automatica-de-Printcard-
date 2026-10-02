@@ -311,7 +311,7 @@
 .btn-back:hover { background:rgba(255,255,255,.2); }
 .btn-dl { background:#e8a93c; color:#102554; border:none; border-radius:8px; padding:8px 18px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
 .btn-dl:hover { background:#f5ba4a; }
-image-slot { display:block; min-height:48px; }
+image-slot { display:block; background:#eef0f4; border-radius:6px; border:1.5px dashed #c7ccd6; min-height:48px; }
 #screen-formulario { display: block; }
 
 /* ── PANTALLA DE INICIO ── */
@@ -435,13 +435,6 @@ image-slot { display:block; min-height:48px; }
 }
 .btn-accion.aprobar:hover { background: #cce9d9; }
 .btn-accion:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-accion.btn-eliminar {
-  background: #fbeaea;
-  color: var(--error);
-  border-color: #f0c0c0;
-  padding: 5px 9px;
-}
-.btn-accion.btn-eliminar:hover { background: #f6d5d5; }
 .empty-state {
   text-align: center;
   padding: 60px 20px;
@@ -489,6 +482,58 @@ image-slot { display:block; min-height:48px; }
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
+/* ── ZONA DE CARGA DE ARCHIVOS ── */
+.upload-zone {
+  border: 2px dashed #c0cbdf;
+  border-radius: 10px;
+  padding: 22px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  background: #f8faff;
+  color: #6b7fa3;
+  font-size: 13px;
+  user-select: none;
+  position: relative;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--azul);
+  background: #eef2fd;
+  color: var(--azul);
+}
+.upload-zone input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.upload-zone .upload-icon { font-size: 28px; margin-bottom: 6px; }
+.upload-zone strong { display: block; color: var(--azul-oscuro); margin-bottom: 2px; font-size: 14px; }
+.uploaded-files-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.uploaded-file-item {
+  display: flex; align-items: center; gap: 8px;
+  background: #fff; border: 1px solid #dbe4f3; border-radius: 8px;
+  padding: 7px 10px; font-size: 12px; color: #2d3a5a;
+}
+.uploaded-file-item .file-icon { font-size: 16px; flex-shrink: 0; }
+.uploaded-file-item .file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uploaded-file-item .file-size { color: #94a3b8; font-size: 11px; flex-shrink: 0; }
+.uploaded-file-item .file-remove {
+  background: none; border: none; cursor: pointer; color: #e53e3e; font-size: 16px;
+  line-height: 1; padding: 0 2px; flex-shrink: 0;
+}
+.upload-progress-bar {
+  height: 4px; border-radius: 4px; background: #e2e8f0; margin-top: 8px; overflow: hidden;
+}
+.upload-progress-bar .bar-inner {
+  height: 100%; background: var(--azul); border-radius: 4px;
+  transition: width 0.3s;
+}
+/* ── MODAL DE DISEÑO ADJUNTO (Cloudinary) ── */
+.disenio-modal-grid img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid #d7dce5; cursor: pointer; }
+.btn-archivos {
+  background: #f0f5ff; border: 1px solid #c5d3f0; color: var(--azul);
+  border-radius: 7px; padding: 5px 10px; font-size: 12px; cursor: pointer;
+  font-weight: 700; white-space: nowrap; transition: background 0.15s;
+}
+.btn-archivos:hover { background: #dbe7ff; }
 /* ── MODO DISEÑADOR ── */
 .designer-badge {
   display: none;
@@ -588,13 +633,10 @@ image-slot { display:block; min-height:48px; }
     <div style="display:flex;gap:10px;align-items:center;">
       <button class="btn-depuracion" id="btn-depuracion" onclick="confirmarDepuracion()">🗑 Depurar &gt;90 días</button>
       <div class="designer-badge" id="designer-badge">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-        Modo Diseño
-        <span class="cerrar-designer" onclick="desactivarModoDisenador()" title="Salir del modo diseño">×</span>
+        🎨 Modo Diseñadora
+        <span class="cerrar-designer" onclick="desactivarModoDisenador()" title="Salir del modo diseñadora">×</span>
       </div>
-      <button class="btn-lock" id="btn-lock" onclick="abrirModalPIN()" title="Modo Diseño">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-      </button>
+      <button class="btn-lock" id="btn-lock" onclick="abrirModalPIN()" title="Acceso diseñadoras">🔒</button>
       <button class="btn-nuevo" onclick="irANuevaCaptura()">+ Nueva Captura</button>
     </div>
   </div>
@@ -614,6 +656,7 @@ image-slot { display:block; min-height:48px; }
       <table class="capturas-table">
         <thead>
           <tr>
+            <th>Folio</th>
             <th>Fecha</th>
             <th>Cliente</th>
             <th>Consecutivo</th>
@@ -624,7 +667,7 @@ image-slot { display:block; min-height:48px; }
           </tr>
         </thead>
         <tbody id="capturas-tbody">
-          <tr><td colspan="7">
+          <tr><td colspan="8">
             <div class="empty-state">
               <div class="icon"><span class="spinner-inline"></span></div>
               <p>Cargando capturas...</p>
@@ -707,6 +750,7 @@ image-slot { display:block; min-height:48px; }
           <option>LuzMa Gaytán</option>
           <option>Norma Silva</option>
           <option>Rafael Mijangos</option>
+          <option>Samantha Borda</option>
           <option>Tanya Ríos</option>
           <option>Vanesa Silva</option>
         </select>
@@ -718,7 +762,7 @@ image-slot { display:block; min-height:48px; }
       </div>
 
       <div class="field">
-        <label>Código interno cliente<span class="req">*</span> <span class="opt">(N/A si no aplica)</span></label>
+        <label>Código interno cliente <span class="opt">(opcional, N/A si no aplica)</span></label>
         <input type="text" id="codigo-interno" placeholder="N/A" onchange="markFilled(this)">
       </div>
 
@@ -758,7 +802,7 @@ image-slot { display:block; min-height:48px; }
       </div>
 
       <div class="field">
-        <label>Igualar diseño a código o consecutivo<span class="req">*</span> <span class="opt">(N/A si no aplica)</span></label>
+        <label>Igualar diseño a código o consecutivo <span class="opt">(N/A si no aplica)</span></label>
         <input type="text" id="igualar" placeholder="Ej. TOR-014-09" onchange="markFilled(this)">
       </div>
 
@@ -936,7 +980,7 @@ image-slot { display:block; min-height:48px; }
       </div>
 
       <div class="field">
-        <label>Código de barras<span class="req">*</span> <span class="opt">(N/A si no aplica)</span></label>
+        <label>Código de barras <span class="opt">(escribir N/A si no aplica)</span></label>
         <input type="text" placeholder="N/A" onchange="markFilled(this)">
       </div>
 
@@ -1003,12 +1047,12 @@ image-slot { display:block; min-height:48px; }
       </div>
 
       <div class="field">
-        <label>Área de impresión Frente<span class="req">*</span> <span class="opt">(N/A si no aplica)</span></label>
+        <label>Área de impresión Frente</label>
         <input type="text" placeholder="Ej. 150 x 250 mm" onchange="markFilled(this)">
       </div>
 
       <div class="field">
-        <label>Área de impresión Reverso<span class="req">*</span> <span class="opt">(N/A si no aplica)</span></label>
+        <label>Área de impresión Reverso</label>
         <input type="text" placeholder="Ej. 150 x 250 mm" onchange="markFilled(this)">
       </div>
 
@@ -1038,11 +1082,35 @@ image-slot { display:block; min-height:48px; }
     </div>
   </div>
 
+  <!-- ARCHIVOS DE DISEÑO -->
+  <div class="card">
+    <div class="card-header"><span class="num">5</span> Archivo de diseño</div>
+    <div class="card-body single">
+      <div class="field">
+        <label>Sube el archivo de diseño<span class="req">*</span></label>
+        <input type="file" id="disenio-file-input" multiple onchange="onDisenioFileChange(event)">
+        <div class="hint">Acepta AI, PSD, PDF, JPG, PNG, TIFF, ZIP, etc. — hasta 5 archivos de 50 MB cada uno. Se suben automáticamente al elegirlos. No se puede generar el DataCard hasta que todos digan "listo".</div>
+        <div id="disenio-status" style="margin-top:8px;"></div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <div class="footer-bar">
   <div class="status">Vista previa — <strong>así se vería el formulario</strong>, los campos no se guardan todavía</div>
   <button class="btn-primary" onclick="validarYGenerarApp()">Generar DataCard →</button>
+</div>
+
+<!-- MODAL DE DISEÑO ADJUNTO -->
+<div id="disenio-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(16,37,84,0.6);z-index:9000;align-items:center;justify-content:center;" onclick="cerrarModalDisenio()">
+  <div style="background:#fff;border-radius:14px;padding:26px 28px;max-width:480px;width:90%;max-height:80vh;overflow-y:auto;" onclick="event.stopPropagation()">
+    <h3 style="margin:0 0 14px;color:#102554;font-size:17px;">📂 Diseño adjunto</h3>
+    <div id="disenio-modal-grid" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;"></div>
+    <p id="disenio-modal-vacio" style="display:none;font-size:13px;color:#6b7585;margin:0 0 16px;"></p>
+    <a id="disenio-modal-link" href="#" target="_blank" rel="noopener" style="display:none;box-sizing:border-box;width:100%;text-align:center;background:#1b3a7a;color:#fff;padding:10px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;margin-bottom:10px;">📎 Descargar diseño</a>
+    <button style="width:100%;padding:12px;border-radius:8px;background:#1b3a7a;color:#fff;border:none;font-weight:600;cursor:pointer;" onclick="cerrarModalDisenio()">Cerrar</button>
+  </div>
 </div>
 
 <div id="validacion-modal" style="display:none; position:fixed; inset:0; background:rgba(16,37,84,0.55); z-index:50; align-items:center; justify-content:center;">
@@ -1290,66 +1358,6 @@ function mostrarPantalla(id) {
 }
 function volverFormulario() { mostrarPantalla('screen-formulario'); }
 
-// ── NUEVA CAPTURA — limpia el formulario y va a pantalla formulario ─
-function nuevaCaptura() {
-  // Reiniciar todos los selects del formulario a su primera opción
-  document.querySelectorAll('#screen-formulario select').forEach(function(sel) {
-    sel.selectedIndex = 0;
-    // Disparar onchange para que los campos condicionales reaccionen
-    if (sel.onchange) try { sel.dispatchEvent(new Event('change')); } catch(e){}
-  });
-
-  // Limpiar todos los inputs de texto del formulario
-  document.querySelectorAll('#screen-formulario input[type="text"]').forEach(function(inp) {
-    if (!inp.disabled) inp.value = '';
-  });
-
-  // Deseleccionar todos los check-pills y radio-pills
-  document.querySelectorAll('#screen-formulario .check-pill.selected, #screen-formulario .radio-pill.selected').forEach(function(el) {
-    el.classList.remove('selected');
-  });
-
-  // Restaurar radio-pills con defaults
-  var sust = document.querySelector('.radio-pill[onclick*="sustituye"]');
-  if (sust) { sust.nextElementSibling && sust.nextElementSibling.classList.add('selected'); }
-  var cont = document.querySelector('.radio-pill[onclick*="continua"]');
-  if (cont) cont.classList.add('selected');
-  var regSi = document.querySelector('.radio-pill[onclick*="selectRegistro(this,\'si\')"]');
-  if (regSi) regSi.classList.add('selected');
-
-  // Reiniciar sección de tintas (borrar filas y crear una nueva vacía)
-  ['tintas-frente', 'tintas-reverso'].forEach(function(listId) {
-    var list = document.getElementById(listId);
-    if (!list) return;
-    list.innerHTML = '';
-    agregarTinta(listId);
-  });
-
-  // Actualizar botones de añadir tinta
-  ['tintas-frente', 'tintas-reverso'].forEach(function(listId) {
-    try { updateAddButtons(listId); } catch(e){}
-  });
-
-  // Aplicar onchange en material y presentación para restaurar estado visual
-  var mat = document.getElementById('material');
-  if (mat) { mat.selectedIndex = 0; try { onMaterialChange(mat); } catch(e){} }
-  var pres = document.getElementById('presentacion');
-  if (pres) { pres.selectedIndex = 0; try { onPresentacionChange(pres); } catch(e){} }
-  var tipImp = document.querySelector('.radio-pill[onclick*="continua"]');
-  if (tipImp) try { selectTipoImpresion(tipImp, 'continua'); } catch(e){}
-  var reg = document.querySelector('.radio-pill[onclick*="selectRegistro(this,\'si\')"]');
-  if (reg) try { selectRegistro(reg, 'si'); } catch(e){}
-
-  // Ocultar campos opcionales que puedan haber quedado visibles
-  var colorLibre = document.getElementById('color-libre');
-  if (colorLibre) colorLibre.style.display = 'none';
-  var prodLibre = document.getElementById('producto-libre');
-  if (prodLibre) prodLibre.style.display = 'none';
-
-  mostrarPantalla('screen-formulario');
-  window.scrollTo(0, 0);
-}
-
 // ─── CONSTRUIR DATOS PARA PRINTCARD ──────────────────────────────
 function construirDataPrintCard() {
   function gid(id) {
@@ -1475,6 +1483,10 @@ function construirDataPrintCard() {
     hist_cambio_1:  tipoTrabajo || 'N/A',
     hist_fecha_1:   fecha,
     hist_cambio_2:  '', hist_fecha_2: '',
+    disenio_archivos: disenioArchivos.slice(),
+    disenio_url:     disenioArchivos.length > 0 ? disenioArchivos[0].secure_url  : '',
+    disenio_nombre:  disenioArchivos.length > 0 ? disenioArchivos[0].nombre      : '',
+    disenio_preview: disenioArchivos.length > 0 ? disenioArchivos[0].preview_url : '',
   };
 }
 
@@ -1502,9 +1514,10 @@ const NOTA_SELECCION_COLOR =
   + '✦ Impresión: Selección a color</div>';
 
 // ─── GENERAR PRINTCARD ────────────────────────────────────────────
-function generarPrintCard() {
+function generarPrintCard(folio) {
   try {
     const data = construirDataPrintCard();
+    data.folio = folio || '';
     window._lastPrintCardData = data;
     const tpl = document.getElementById('tpl-printcard');
     const clone = tpl.cloneNode(true);
@@ -1521,106 +1534,20 @@ function generarPrintCard() {
     // Reemplazar chips de tintas hardcodeados por los del formulario
     function chipTinta(nombre) {
       const colores = {
-        // Proceso
-        'Cyan':'#00B4D8','Magenta':'#D63384','Amarillo':'#FFC107','Negro':'#1a1a1a',
-        // Especiales
-        'Blanco':'#ffffff','Barniz':'#cfd6e0',
-        // Azules / Reflex
-        'Reflex Blue':'#001489','Reflex':'#001489',
-        '072C':'#001489','072':'#001489',
-        '279C':'#418FDE','279':'#418FDE',
-        '2935C':'#0057A8','2935':'#0057A8',
-        '2945C':'#0065A3','2945':'#0065A3',
-        '3005C':'#0076A8','3005':'#0076A8',
-        '3015C':'#00678A','3015':'#00678A',
-        '281C':'#003087','281':'#003087',
-        '286C':'#003DA5','286':'#003DA5',
-        '294C':'#002D72','294':'#002D72',
-        '298C':'#62B5E5','298':'#62B5E5',
-        '300C':'#0065BD','300':'#0065BD',
-        '301C':'#00437A','301':'#00437A',
-        '302C':'#003057','302':'#003057',
-        // Rojos / Carmines
-        '185C':'#C8102E','185':'#C8102E',
-        '187C':'#B22222','187':'#B22222',
-        '200C':'#BA0C2F','200':'#BA0C2F',
-        '485C':'#DA291C','485':'#DA291C',
-        '199C':'#CC0033','199':'#CC0033',
-        '201C':'#8B1A2F','201':'#8B1A2F',
-        '484C':'#7C2D19','484':'#7C2D19',
-        '483C':'#6B3226','483':'#6B3226',
-        '1795C':'#C8102E','1795':'#C8102E',
-        '1955C':'#6E1423','1955':'#6E1423',
-        'Warm Red':'#F9423A',
-        // Naranjas
-        '021C':'#FE5000','021':'#FE5000',
-        '151C':'#FF7900','151':'#FF7900',
-        '165C':'#FF6720','165':'#FF6720',
-        '166C':'#FA4616','166':'#FA4616',
-        '021':'#FE5000',
-        // Amarillos / Dorados
-        '123C':'#FFC72C','123':'#FFC72C',
-        '124C':'#EEB211','124':'#EEB211',
-        '125C':'#C9930A','125':'#C9930A',
-        '1245C':'#C9A227','1245':'#C9A227',
-        '1255C':'#E0A126','1255':'#E0A126',
-        '109C':'#FFD100','109':'#FFD100',
-        '116C':'#FFCD00','116':'#FFCD00',
-        // Verdes
-        '347C':'#009A44','347':'#009A44',
-        '348C':'#007A33','348':'#007A33',
-        '355C':'#00843D','355':'#00843D',
-        '361C':'#43B02A','361':'#43B02A',
-        '364C':'#3A7728','364':'#3A7728',
-        '375C':'#78BE20','375':'#78BE20',
-        '376C':'#5C8A1E','376':'#5C8A1E',
-        'Green':'#00A550',
-        // Morados / Violetas
-        '267C':'#6A1F70','267':'#6A1F70',
-        '268C':'#511C74','268':'#511C74',
-        '269C':'#3D1152','269':'#3D1152',
-        '2603C':'#44116A','2603':'#44116A',
-        '2607C':'#391053','2607':'#391053',
-        '5175C':'#8B6690','5175':'#8B6690',
-        'Purple':'#BB29BB','Violet':'#440099',
-        // Rosas / Fucsia
-        '225C':'#D0006F','225':'#D0006F',
-        '226C':'#C5006B','226':'#C5006B',
-        '232C':'#E10098','232':'#E10098',
-        'Rubine Red':'#CE0058',
-        // Cafés / Tierra
-        '4625C':'#5C2C14','4625':'#5C2C14',
-        '4975C':'#492416','4975':'#492416',
-        // Grises / Metálicos
-        'Cool Gray 11':'#54585A','Cool Gray 9':'#76787B','Cool Gray 7':'#97999B',
-        'Cool Gray 5':'#B1B3B3','Cool Gray 3':'#C8C9C7','Cool Gray 1':'#D9D9D6',
-        '877C':'#8A8D8F','877':'#8A8D8F',
-        '8003C':'#A05C34','8003':'#A05C34',
-        'Silver':'#C0C0C0','Gold':'#CFB53B',
-        // Flúor / Neón
-        '803C':'#FF6EFF','803':'#FF6EFF',
-        '804C':'#FFAA4D','804':'#FFAA4D',
-        '805C':'#FF6666','805':'#FF6666',
-        '806C':'#FF3EB5','806':'#FF3EB5',
-        '807C':'#E5004E','807':'#E5004E',
+        'Cyan':'#00B4D8','Magenta':'#D63384','Amarillo':'#FFC107',
+        'Negro':'#1a1a1a','Blanco':'#ffffff','Reflex':'#001489','Barniz':'#cfd6e0',
+        '185C':'#C8102E','187C':'#B22222','485C':'#D22B2B','483C':'#6B3226',
+        '072C':'#001489','3005C':'#0076A8','123C':'#FFC72C',
+        '1245':'#C9A227','1795':'#C8102E','1955':'#6E1423',
       };
-      // Longest-match-wins: find the key whose stripped version longest-matches inside the nombre
-      var stripped = nombre.replace(/\s/g,'').toLowerCase();
-      var bestKey = null, bestLen = 0;
-      for (var k in colores) {
-        var ks = k.replace(/\s/g,'').toLowerCase();
-        if (stripped.includes(ks) && ks.length > bestLen) {
-          bestKey = k; bestLen = ks.length;
+      let color = '#e0e0e0';
+      for (const k in colores) {
+        if (nombre.replace(/\s/g,'').toLowerCase().includes(k.toLowerCase())) {
+          color = colores[k]; break;
         }
       }
-      var color = bestKey ? colores[bestKey] : '#e0e0e0';
-      // Luminance-based text color
-      function hexLum(hex) {
-        var r=parseInt(hex.slice(1,3),16)/255, g=parseInt(hex.slice(3,5),16)/255, b=parseInt(hex.slice(5,7),16)/255;
-        var toL = function(c){ return c<=0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055,2.4); };
-        return 0.2126*toL(r)+0.7152*toL(g)+0.0722*toL(b);
-      }
-      var textColor = hexLum(color) > 0.35 ? '#333' : '#fff';
+      const light = ['#ffffff','#FFC107','#FFC72C','#C9A227','#cfd6e0','#e0e0e0'];
+      const textColor = light.includes(color) ? '#333' : '#fff';
       return `<span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e6f2;border-radius:18px;padding:4px 11px;font-size:10px;font-weight:600;margin:2px;"><span style="width:13px;height:13px;border-radius:50%;background:${color};border:1px solid #bbb;flex-shrink:0"></span><span style="color:#111">${nombre}</span></span>`;
     }
 
@@ -1715,6 +1642,24 @@ async function descargarPrintCard() {
   finally { txt.textContent='⬇ Descargar Printcard PDF'; btn.disabled=false; }
 }
 
+// ─── HELPER ARCHIVO DE DISEÑO EN DATACARD ────────────────────────
+function htmlArchivoDisenio(data) {
+  const archivos = data.disenio_archivos && data.disenio_archivos.length
+    ? data.disenio_archivos
+    : (data.disenio_url ? [{ secure_url: data.disenio_url, nombre: data.disenio_nombre || 'diseño', preview_url: data.disenio_preview }] : []);
+  if (!archivos.length) {
+    return '<span style="font-size:9px;color:#bbb;font-style:italic">Sin archivo de diseño</span>';
+  }
+  return archivos.map(function(a) {
+    return '<div style="margin-bottom:8px;">'
+      + '<a href="'+a.secure_url+'" target="_blank" rel="noopener" style="display:inline-block;font-size:10px;font-weight:700;color:#fff;background:#1b3a7a;padding:6px 12px;border-radius:6px;text-decoration:none;">📎 Descargar '+(a.nombre||'diseño')+'</a>'
+      + (a.preview_url
+          ? '<div style="margin-top:6px;"><img src="'+a.preview_url+'" style="max-width:120px;max-height:120px;object-fit:contain;border-radius:6px;border:1px solid #d7dce5"></div>'
+          : '')
+      + '</div>';
+  }).join('');
+}
+
 // ─── GENERADOR DE DATACARD HTML ──────────────────────────────────
 function generarDataCardHTML(data, selTiposOverride) {
   const AZUL = '#1b3a7a';
@@ -1749,7 +1694,9 @@ function generarDataCardHTML(data, selTiposOverride) {
     + '<div style="font-size:9px;color:#aebcdd;margin-top:2px">Captura de DataCard · Comercial</div></div>'
     + '<div style="background:#fff;border-radius:4px;padding:6px 10px;font-size:8px;color:#102554;text-align:right">'
     + '<div style="font-weight:700">Sistema de Gestión de Inocuidad y Calidad</div>'
-    + '<div>Formato: DATA CARD</div><div>Clave: PRE-F-01 · Revisión: 07</div></div></div>'
+    + '<div>Formato: DATA CARD</div><div>Clave: PRE-F-01 · Revisión: 07</div>'
+    + (data.folio ? '<div style="margin-top:4px;font-size:11px;font-weight:800;color:#1b3a7a;letter-spacing:.04em">'+data.folio+'</div>' : '')
+    + '</div></div>'
     + sec('Información general',
         fld('Fecha', data.fecha) + fld('Zona', data.zona||'N/A') + fld('Consecutivo', data.consecutivo)
       + fld('Asesor comercial', data.asesor) + fld('Código interno', data.codigo_interno||'N/A') + fld('Planta TIF', data.planta_tif||'N/A')
@@ -1773,6 +1720,7 @@ function generarDataCardHTML(data, selTiposOverride) {
       + (data.tintas_reverso&&data.tintas_reverso.length ? data.tintas_reverso.map(function(t){ return chp(t,false); }).join('') : '<span style="font-size:9px;color:#bbb;font-style:italic">N/A</span>')
       + '</div></div>')
     + sec('Observaciones', '<div style="font-size:10px;color:#333">'+(data.observaciones||'N/A')+'</div>')
+    + sec('Archivo de diseño', htmlArchivoDisenio(data))
     + '<div style="font-size:7px;color:#aaa;margin-top:6px;border-top:0.5px solid #eee;padding-top:6px">NOTA: Los documentos del Sistema de Gestión de Inocuidad y Calidad de ZUBEX INDUSTRIAL se controlan en RED INTERNA. Cualquier copia impresa es SOLO REFERENCIA.</div>'
     + '</div>';
 }
@@ -1802,7 +1750,7 @@ async function descargarDataCard() {
 
 
 // ─── VALIDAR Y GENERAR (app unificada) ───────────────────────────
-function validarYGenerarApp() {
+async function validarYGenerarApp() {
   const faltantes = [];
 
   // Chips de tipo de trabajo
@@ -1830,26 +1778,17 @@ function validarYGenerarApp() {
     const inp = field.querySelector('input[type="text"]');
 
     if (sel) {
-      // Distinguir entre select principal (tiene opción vacía, ej. Zona/Asesor/Producto)
-      // y select de unidades (sin opción vacía, ej. pulg/mm en Ancho/Largo).
-      const esPrincipal = Array.from(sel.options).some(function(o){ return o.value === ''; });
-      if (esPrincipal) {
-        // Select principal — el campo requerido es el select
-        if (!sel.value) {
-          faltantes.push(label.textContent.replace('*','').replace(/\(.*\)/g,'').trim());
-        } else if (sel.value === 'otro') {
-          // El usuario eligió "Otro" — revisar el input libre
-          if (inp && !inp.disabled && !inp.value.trim()) {
-            faltantes.push(label.textContent.replace('*','').replace(/\(.*\)/g,'').trim() + ' (especifica el valor)');
-          }
-        }
-        // Cualquier otro valor en el select principal → campo OK
-      } else {
-        // Select de unidades (pulg/mm) — el campo requerido es el input numérico
-        if (inp && !inp.disabled && !inp.readOnly && !inp.value.trim()) {
-          faltantes.push(label.textContent.replace('*','').replace(/\(.*\)/g,'').trim());
+      // Si el select tiene valor seleccionado, el campo está OK
+      // Solo fallar si no hay valor Y no es el caso "otro con input"
+      if (!sel.value) {
+        faltantes.push(label.textContent.replace('*','').replace(/\(.*\)/g,'').trim());
+      } else if (sel.value === 'otro') {
+        // Solo revisar el input si eligió "Otro"
+        if (inp && !inp.disabled && !inp.value.trim()) {
+          faltantes.push(label.textContent.replace('*','').replace(/\(.*\)/g,'').trim() + ' (especifica el valor)');
         }
       }
+      // Si sel.value tiene cualquier otro valor → campo OK, no revisar input
     } else if (inp && !inp.disabled && !inp.readOnly) {
       if (!inp.value.trim()) {
         faltantes.push(label.textContent.replace('*','').replace(/\(.*\)/g,'').trim());
@@ -1857,13 +1796,21 @@ function validarYGenerarApp() {
     }
   });
 
+  if (disenioArchivos.length === 0) {
+    faltantes.push('Archivo de diseño — sube al menos un archivo antes de generar');
+  } else if (disenioSubiendo > 0) {
+    faltantes.push('Archivo de diseño — espera a que termine(n) de subir (aparece "listo" en cada uno)');
+  }
+
   if (faltantes.length > 0) {
     document.getElementById('campos-faltantes').innerHTML =
       faltantes.map(f => '<li>'+f+'</li>').join('');
     document.getElementById('validacion-modal').style.display = 'flex';
     return;
   }
-  generarPrintCard();
+  let folio = '';
+  try { folio = await obtenerSiguienteFolio(); } catch(e) { console.warn('No se pudo obtener folio:', e.message); }
+  generarPrintCard(folio);
 }
 
 
@@ -1937,7 +1884,7 @@ function mostrarBanner(msg, tipo) {
 async function cargarCapturas() {
   const tbody = document.getElementById('capturas-tbody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon"><span class="spinner-inline"></span></div><p>Cargando capturas...</p></div></td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="icon"><span class="spinner-inline"></span></div><p>Cargando capturas...</p></div></td></tr>';
   const banner = document.getElementById('api-status-banner');
   if (banner) banner.style.display = 'none';
   try {
@@ -1955,7 +1902,7 @@ async function cargarCapturas() {
     renderCapturas(capturas);
   } catch(e) {
     mostrarBanner('⚠️ <strong>Error al cargar capturas de Firestore:</strong> ' + e.message, 'error');
-    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">📂</div><p>No se pudo conectar con Firebase. Verifica tu conexión.</p></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="icon">📂</div><p>No se pudo conectar con Firebase. Verifica tu conexión.</p></div></td></tr>';
   }
 }
 
@@ -1963,7 +1910,7 @@ async function cargarCapturas() {
 function renderCapturas(capturas) {
   const tbody = document.getElementById('capturas-tbody');
   if (!capturas || capturas.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">📋</div><p style="font-weight:700">Aún no hay capturas</p><p>Las capturas de Comercial aparecerán aquí.</p></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="icon">📋</div><p style="font-weight:700">Aún no hay capturas</p><p>Las capturas de Comercial aparecerán aquí.</p></div></td></tr>';
     return;
   }
   tbody.innerHTML = capturas.map(function(c) {
@@ -1974,12 +1921,9 @@ function renderCapturas(capturas) {
       ? '<button class="btn-accion ' + (esRevisado ? 'aprobar' : '') + '" onclick="toggleRevisado(\'' + c.id + '\', this)">' +
         (esRevisado ? '↺ Pendiente' : '✓ Revisado') + '</button>'
       : '';
-    const btnEliminar = modoDisenador
-      ? '<button class="btn-accion btn-eliminar" onclick="eliminarCaptura(\'' + c.id + '\', this)" title="Eliminar captura">' +
-        '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>' +
-        '</button>'
-      : '';
+    const btnArchivos = '<button class="btn-archivos" onclick="verDisenioCaptura(\'' + c.id + '\')" title="Ver diseño adjunto">📂 Diseño</button>';
     return '<tr>' +
+      '<td style="font-weight:700;color:#1b3a7a;white-space:nowrap">' + (c.folio || '—') + '</td>' +
       '<td>' + (c.fecha || '—') + '</td>' +
       '<td class="td-cliente">' + (c.cliente || '—') + '</td>' +
       '<td class="td-consec">' + (c.consecutivo || '—') + '</td>' +
@@ -1989,8 +1933,8 @@ function renderCapturas(capturas) {
       '<td><div class="td-acciones">' +
         '<button class="btn-accion" onclick="descargarPDFCaptura(\'' + c.id + '\',\'datacard\',this)" title="Descargar DataCard">⬇ DataCard</button>' +
         '<button class="btn-accion" onclick="descargarPDFCaptura(\'' + c.id + '\',\'printcard\',this)" title="Descargar PrintCard">⬇ PrintCard</button>' +
+        btnArchivos +
         btnRevisado +
-        btnEliminar +
       '</div></td>' +
     '</tr>';
   }).join('');
@@ -2012,19 +1956,6 @@ async function toggleRevisado(id, btn) {
     alert('Error al actualizar estado: ' + e.message);
     btn.disabled = false;
     btn.textContent = textoOrig;
-  }
-}
-
-// ── ELIMINAR CAPTURA (solo modo diseño) ───────────────────────────
-async function eliminarCaptura(id, btn) {
-  if (!confirm('¿Eliminar esta captura permanentemente? Esta acción no se puede deshacer.')) return;
-  btn.disabled = true;
-  try {
-    await db.collection('capturas').doc(id).delete();
-    cargarCapturas();
-  } catch(e) {
-    alert('Error al eliminar: ' + e.message);
-    btn.disabled = false;
   }
 }
 
@@ -2092,103 +2023,18 @@ async function regenerarYDescargarPrintCard(data) {
 
   // Helper chip de tinta
   function chipTintaLocal(nombre) {
-    var colores = {
-      // Proceso
-      'Cyan':'#00B4D8','Magenta':'#D63384','Amarillo':'#FFC107','Negro':'#1a1a1a',
-      // Especiales
-      'Blanco':'#ffffff','Barniz':'#cfd6e0',
-      // Azules / Reflex
-      'Reflex Blue':'#001489','Reflex':'#001489',
-      '072C':'#001489','072':'#001489',
-      '279C':'#418FDE','279':'#418FDE',
-      '2935C':'#0057A8','2935':'#0057A8',
-      '2945C':'#0065A3','2945':'#0065A3',
-      '3005C':'#0076A8','3005':'#0076A8',
-      '3015C':'#00678A','3015':'#00678A',
-      '281C':'#003087','281':'#003087',
-      '286C':'#003DA5','286':'#003DA5',
-      '294C':'#002D72','294':'#002D72',
-      '298C':'#62B5E5','298':'#62B5E5',
-      '300C':'#0065BD','300':'#0065BD',
-      '301C':'#00437A','301':'#00437A',
-      '302C':'#003057','302':'#003057',
-      // Rojos / Carmines
-      '185C':'#C8102E','185':'#C8102E',
-      '187C':'#B22222','187':'#B22222',
-      '200C':'#BA0C2F','200':'#BA0C2F',
-      '485C':'#DA291C','485':'#DA291C',
-      '199C':'#CC0033','199':'#CC0033',
-      '201C':'#8B1A2F','201':'#8B1A2F',
-      '484C':'#7C2D19','484':'#7C2D19',
-      '483C':'#6B3226','483':'#6B3226',
-      '1795C':'#C8102E','1795':'#C8102E',
-      '1955C':'#6E1423','1955':'#6E1423',
-      'Warm Red':'#F9423A',
-      // Naranjas
-      '021C':'#FE5000','021':'#FE5000',
-      '151C':'#FF7900','151':'#FF7900',
-      '165C':'#FF6720','165':'#FF6720',
-      '166C':'#FA4616','166':'#FA4616',
-      // Amarillos / Dorados
-      '123C':'#FFC72C','123':'#FFC72C',
-      '124C':'#EEB211','124':'#EEB211',
-      '125C':'#C9930A','125':'#C9930A',
-      '1245C':'#C9A227','1245':'#C9A227',
-      '1255C':'#E0A126','1255':'#E0A126',
-      '109C':'#FFD100','109':'#FFD100',
-      '116C':'#FFCD00','116':'#FFCD00',
-      // Verdes
-      '347C':'#009A44','347':'#009A44',
-      '348C':'#007A33','348':'#007A33',
-      '355C':'#00843D','355':'#00843D',
-      '361C':'#43B02A','361':'#43B02A',
-      '364C':'#3A7728','364':'#3A7728',
-      '375C':'#78BE20','375':'#78BE20',
-      '376C':'#5C8A1E','376':'#5C8A1E',
-      'Green':'#00A550',
-      // Morados / Violetas
-      '267C':'#6A1F70','267':'#6A1F70',
-      '268C':'#511C74','268':'#511C74',
-      '269C':'#3D1152','269':'#3D1152',
-      '2603C':'#44116A','2603':'#44116A',
-      '2607C':'#391053','2607':'#391053',
-      '5175C':'#8B6690','5175':'#8B6690',
-      'Purple':'#BB29BB','Violet':'#440099',
-      // Rosas / Fucsia
-      '225C':'#D0006F','225':'#D0006F',
-      '226C':'#C5006B','226':'#C5006B',
-      '232C':'#E10098','232':'#E10098',
-      'Rubine Red':'#CE0058',
-      // Cafés / Tierra
-      '4625C':'#5C2C14','4625':'#5C2C14',
-      '4975C':'#492416','4975':'#492416',
-      // Grises / Metálicos
-      'Cool Gray 11':'#54585A','Cool Gray 9':'#76787B','Cool Gray 7':'#97999B',
-      'Cool Gray 5':'#B1B3B3','Cool Gray 3':'#C8C9C7','Cool Gray 1':'#D9D9D6',
-      '877C':'#8A8D8F','877':'#8A8D8F',
-      '8003C':'#A05C34','8003':'#A05C34',
-      'Silver':'#C0C0C0','Gold':'#CFB53B',
-      // Flúor / Neón
-      '803C':'#FF6EFF','803':'#FF6EFF',
-      '804C':'#FFAA4D','804':'#FFAA4D',
-      '805C':'#FF6666','805':'#FF6666',
-      '806C':'#FF3EB5','806':'#FF3EB5',
-      '807C':'#E5004E','807':'#E5004E',
+    const colores = {
+      'Cyan':'#00B4D8','Magenta':'#D63384','Amarillo':'#FFC107',
+      'Negro':'#1a1a1a','Blanco':'#ffffff','Reflex':'#001489','Barniz':'#cfd6e0',
+      '185C':'#C8102E','187C':'#B22222','485C':'#D22B2B','483C':'#6B3226',
+      '072C':'#001489','3005C':'#0076A8','123C':'#FFC72C',
+      '1245':'#C9A227','1795':'#C8102E','1955':'#6E1423',
     };
-    // Longest-match-wins
-    var stripped = nombre.replace(/\s/g,'').toLowerCase();
-    var bestKey = null, bestLen = 0;
+    let color = '#e0e0e0';
     for (var k in colores) {
-      var ks = k.replace(/\s/g,'').toLowerCase();
-      if (stripped.includes(ks) && ks.length > bestLen) { bestKey = k; bestLen = ks.length; }
+      if (nombre.replace(/\s/g,'').toLowerCase().includes(k.toLowerCase())) { color = colores[k]; break; }
     }
-    var color = bestKey ? colores[bestKey] : '#e0e0e0';
-    // Luminance-based text color
-    function hexLum(hex) {
-      var r=parseInt(hex.slice(1,3),16)/255, g=parseInt(hex.slice(3,5),16)/255, b=parseInt(hex.slice(5,7),16)/255;
-      var toL = function(c){ return c<=0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055,2.4); };
-      return 0.2126*toL(r)+0.7152*toL(g)+0.0722*toL(b);
-    }
+    const light = ['#ffffff','#FFC107','#FFC72C','#C9A227','#cfd6e0','#e0e0e0'];
     return '<span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e6f2;border-radius:18px;padding:4px 11px;font-size:10px;font-weight:600;margin:2px;">'
       + '<span style="width:13px;height:13px;border-radius:50%;background:'+color+';border:1px solid #bbb;flex-shrink:0"></span>'
       + '<span style="color:#111">'+nombre+'</span></span>';
@@ -2260,21 +2106,79 @@ async function confirmarDepuracion() {
   }
 }
 
+// ── FOLIO AUTOMÁTICO (PC-0001, reinicia por año) ──────────────────
+async function obtenerSiguienteFolio() {
+  const año = String(new Date().getFullYear());
+  const ref = db.collection('contadores').doc('folios');
+  return db.runTransaction(async function(t) {
+    const doc = await t.get(ref);
+    const datos = doc.exists ? doc.data() : {};
+    const actual = datos[año] || 0;
+    const siguiente = actual + 1;
+    const nuevos = Object.assign({}, datos);
+    nuevos[año] = siguiente;
+    t.set(ref, nuevos);
+    return 'PC-' + String(siguiente).padStart(4, '0');
+  });
+}
+
 // ── GUARDAR CAPTURA EN FIRESTORE ──────────────────────────────────
-// Guarda todos los campos del formulario (sin PDFs — se regeneran al descargar)
 async function guardarCapturaEnBackend(data) {
   try {
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2,5);
     await db.collection('capturas').doc(id).set(
       Object.assign({}, data, {
-        estado:     'Pendiente',
-        creado_en:  firebase.firestore.FieldValue.serverTimestamp()
+        estado:          'Pendiente',
+        folio:           data.folio || '',
+        creado_en:       firebase.firestore.FieldValue.serverTimestamp(),
+        disenio_archivos: disenioArchivos.slice(),
+        disenio_url:     disenioArchivos.length > 0 ? disenioArchivos[0].secure_url  : '',
+        disenio_nombre:  disenioArchivos.length > 0 ? disenioArchivos[0].nombre      : '',
+        disenio_preview: disenioArchivos.length > 0 ? disenioArchivos[0].preview_url : '',
       })
     );
     console.log('Captura guardada en Firestore:', id);
   } catch(e) {
     console.warn('No se pudo guardar en Firestore:', e.message);
   }
+}
+
+// ── MODAL DE DISEÑO ADJUNTO (Cloudinary) ──────────────────────────
+async function verDisenioCaptura(id) {
+  const modal = document.getElementById('disenio-modal-overlay');
+  const grid = document.getElementById('disenio-modal-grid');
+  const linkBtn = document.getElementById('disenio-modal-link');
+  const vacio = document.getElementById('disenio-modal-vacio');
+  grid.innerHTML = '';
+  linkBtn.style.display = 'none';
+  vacio.style.display = 'none';
+  modal.style.display = 'flex';
+  try {
+    const snap = await db.collection('capturas').doc(id).get();
+    if (!snap.exists) { vacio.textContent = 'Captura no encontrada en Firestore.'; vacio.style.display = 'block'; return; }
+    const data = snap.data();
+    const archivos = data.disenio_archivos && data.disenio_archivos.length
+      ? data.disenio_archivos
+      : (data.disenio_url ? [{ secure_url: data.disenio_url, nombre: data.disenio_nombre || 'diseño', preview_url: data.disenio_preview }] : []);
+    if (archivos.length) {
+      linkBtn.style.display = 'none'; // Se reemplaza por botones por archivo
+      grid.innerHTML = archivos.map(function(a, i) {
+        return '<div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #f0f3f8;">'
+          + (a.preview_url ? '<img src="'+a.preview_url+'" onerror="this.style.display=\'none\'" onclick="window.open(\''+a.secure_url+'\',\'_blank\')" title="Abrir en grande" style="max-width:120px;max-height:120px;object-fit:contain;border-radius:8px;border:1px solid #d7dce5;cursor:pointer;">' : '')
+          + '<a href="'+a.secure_url+'" target="_blank" rel="noopener" style="display:inline-block;background:#1b3a7a;color:#fff;padding:7px 14px;border-radius:7px;font-size:13px;font-weight:600;text-decoration:none;">📎 Descargar '+(a.nombre||'diseño')+'</a>'
+          + '</div>';
+      }).join('');
+    } else {
+      vacio.textContent = 'Esta captura no tiene diseño adjunto.';
+      vacio.style.display = 'block';
+    }
+  } catch(e) {
+    vacio.textContent = 'Error al cargar el diseño: ' + e.message;
+    vacio.style.display = 'block';
+  }
+}
+function cerrarModalDisenio() {
+  document.getElementById('disenio-modal-overlay').style.display = 'none';
 }
 
 const CORREOS_ASESORES = {
@@ -2294,6 +2198,7 @@ const CORREOS_ASESORES = {
   'LuzMa Gaytán': 'lmgaytan@mawmexicana.com',
   'Norma Silva': 'n.silva@zubex.com.mx',
   'Rafael Mijangos': 'r.mijangos@zubex.com.mx',
+  'Samantha Borda': 's.borda@zubex.com.mx',
   'Tanya Ríos': 't.rios@zubex.com.mx',
   'Vanesa Silva': 'v.silva@zubex.com.mx',
 };
@@ -2323,7 +2228,6 @@ function getCorreoAsesor() {
     </div>
     <div style="display:flex;gap:10px;align-items:center;">
       <button class="btn-back" onclick="volverFormulario()">← Volver</button>
-      <button class="btn-back" onclick="nuevaCaptura()" style="background:rgba(232,169,60,.18);border-color:rgba(232,169,60,.4);color:#f5d280;">+ Nueva captura</button>
       <button class="btn-dl" id="btn-dl-datacard" onclick="descargarDataCard()">
         <span id="btn-dc-txt">⬇ DataCard PDF</span>
       </button>
@@ -2617,5 +2521,184 @@ function getCorreoAsesor() {
     </div>
   </div>
 </div>
+<script>
+// ─── CLOUDINARY — SUBIDA DE ARCHIVO DE DISEÑO ────────────────────
+const CLOUDINARY_CLOUD_NAME    = 'snq6pvhf';
+const CLOUDINARY_UPLOAD_PRESET = 'printcard_disenos';
+const DISENIO_MAX_MB   = 50;
+const DISENIO_MAX_ARCH = 5;
+
+let disenioArchivos = []; // [{ secure_url, nombre, bytes, preview_url }, ...]
+let disenioSubiendo  = 0; // cuántos uploads están en curso
+
+// ── Entrada del usuario: puede elegir varios archivos a la vez ─────
+function onDisenioFileChange(event) {
+  const files = Array.from(event.target.files || []);
+  if (!files.length) return;
+
+  const espacioLibre = DISENIO_MAX_ARCH - disenioArchivos.length - disenioSubiendo;
+  if (espacioLibre <= 0) {
+    renderDisenioStatus();
+    return;
+  }
+  const aSubir = files.slice(0, espacioLibre);
+  const ignorados = files.length - aSubir.length;
+
+  let errores = [];
+  aSubir.forEach(function(file) {
+    if (file.size > DISENIO_MAX_MB * 1024 * 1024) {
+      errores.push('"' + file.name + '" pesa ' + (file.size/1024/1024).toFixed(1) + ' MB (máx ' + DISENIO_MAX_MB + ' MB)');
+    } else {
+      disenioSubiendo++;
+      subirDisenioACloudinary(file);
+    }
+  });
+
+  if (errores.length) {
+    // Mostrar errores sin borrar los que ya están subiendo/subidos
+    renderDisenioStatus(errores);
+  } else {
+    renderDisenioStatus();
+  }
+  event.target.value = ''; // Permitir re-elegir el mismo archivo si se quita
+}
+
+// ── Sube UN archivo y agrega al arreglo al completar ──────────────
+function subirDisenioACloudinary(file) {
+  const placeholder = { nombre: file.name, bytes: file.size, _subiendo: true, _pct: 0 };
+  disenioArchivos.push(placeholder);
+  renderDisenioStatus();
+
+  const xhr = new XMLHttpRequest();
+  const url = 'https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD_NAME + '/auto/upload';
+  const form = new FormData();
+  form.append('file', file);
+  form.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+  xhr.upload.addEventListener('progress', function(e) {
+    if (e.lengthComputable) {
+      placeholder._pct = Math.round((e.loaded / e.total) * 100);
+      renderDisenioStatus();
+    }
+  });
+
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    disenioSubiendo = Math.max(0, disenioSubiendo - 1);
+    const idx = disenioArchivos.indexOf(placeholder);
+    if (xhr.status >= 200 && xhr.status < 300) {
+      let resp;
+      try { resp = JSON.parse(xhr.responseText); } catch(e2) { resp = null; }
+      if (resp && resp.secure_url) {
+        const esPreviable = /\.(psd|ai|pdf|eps|tif|tiff)$/i.test(resp.secure_url);
+        const entrada = {
+          secure_url:  resp.secure_url,
+          nombre:      file.name,
+          bytes:       resp.bytes || file.size,
+          preview_url: esPreviable ? resp.secure_url.replace(/\.\w+$/, '.jpg') : resp.secure_url,
+        };
+        if (idx !== -1) disenioArchivos[idx] = entrada;
+      } else {
+        let errMsg = 'Respuesta inesperada de Cloudinary.';
+        if (resp && resp.error) {
+          if (resp.error.code === 401 || resp.error.message === 'Untrusted File Access') {
+            errMsg = 'ZIP bloqueado por Cloudinary. Pide a Selene que active "Allow raw uploads" en el preset printcard_disenos del panel de Cloudinary, o comprime los archivos en otro formato.';
+          } else {
+            errMsg = resp.error.message || errMsg;
+          }
+        }
+        if (idx !== -1) { placeholder._error = errMsg; placeholder._subiendo = false; }
+      }
+    } else {
+      let msg = 'Error ' + xhr.status;
+      try { const err = JSON.parse(xhr.responseText); if (err && err.error && err.error.message) msg = err.error.message; } catch(e2) {}
+      if (idx !== -1) { placeholder._error = msg; placeholder._subiendo = false; }
+    }
+    renderDisenioStatus();
+  };
+
+  xhr.onerror = function() {
+    disenioSubiendo = Math.max(0, disenioSubiendo - 1);
+    const idx = disenioArchivos.indexOf(placeholder);
+    if (idx !== -1) { placeholder._error = 'Sin conexión con Cloudinary.'; placeholder._subiendo = false; }
+    renderDisenioStatus();
+  };
+
+  xhr.open('POST', url, true);
+  xhr.send(form);
+}
+
+// ── Renderiza el bloque de estado completo ────────────────────────
+function renderDisenioStatus(erroresExtras) {
+  const cont = document.getElementById('disenio-status');
+  if (!cont) return;
+
+  let html = '';
+
+  // Contador de cupos
+  const total = disenioArchivos.length;
+  const subiendo = disenioArchivos.filter(function(a){ return a._subiendo; }).length;
+  const listos   = disenioArchivos.filter(function(a){ return !a._subiendo && !a._error; }).length;
+
+  if (total > 0) {
+    html += '<div style="font-size:12px;color:#6b7585;margin-bottom:6px;">'
+      + listos + ' listo(s) · ' + subiendo + ' subiendo · ' + (DISENIO_MAX_ARCH - total) + ' cupo(s) libre(s)</div>';
+  }
+
+  // Fila por cada archivo
+  disenioArchivos.forEach(function(a, i) {
+    const kb = (a.bytes/1024).toFixed(0);
+    if (a._subiendo) {
+      html += '<div style="display:flex;align-items:center;gap:10px;background:#eaf0fb;border:1px solid #b9cef0;color:#1b3a7a;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:6px;">'
+        + '⏳ <strong>' + a.nombre + '</strong> — subiendo ' + a._pct + '%'
+        + '</div>';
+    } else if (a._error) {
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff0f0;border:1px solid #f5a0a0;color:#8a1e1e;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:6px;">'
+        + '<span>❌ <strong>' + a.nombre + '</strong> — ' + a._error + '</span>'
+        + '<button type="button" onclick="quitarDisenioArchivo('+i+')" style="border:none;background:none;color:#8a1e1e;text-decoration:underline;cursor:pointer;font-size:12px;white-space:nowrap;flex-shrink:0;">Quitar</button>'
+        + '</div>';
+    } else {
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:#e6f4ed;border:1px solid #84d4a8;color:#1e5c35;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:6px;">'
+        + '<div style="display:flex;align-items:center;gap:8px;min-width:0;">'
+        + (a.preview_url ? '<img src="'+a.preview_url+'" onerror="this.style.display=\'none\'" style="width:36px;height:36px;object-fit:contain;border-radius:5px;border:1px solid #c5e8d4;flex-shrink:0;">' : '')
+        + '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">✅ <strong>'+a.nombre+'</strong> ('+kb+' KB)</span>'
+        + '</div>'
+        + '<div style="display:flex;gap:8px;flex-shrink:0;">'
+        + '<a href="'+a.secure_url+'" target="_blank" rel="noopener" style="color:#1e5c35;text-decoration:underline;font-size:12px;">Ver</a>'
+        + '<button type="button" onclick="quitarDisenioArchivo('+i+')" style="border:none;background:none;color:#1e5c35;text-decoration:underline;cursor:pointer;font-size:12px;padding:0;">Quitar</button>'
+        + '</div>'
+        + '</div>';
+    }
+  });
+
+  // Errores de tamaño / cupo
+  if (erroresExtras && erroresExtras.length) {
+    erroresExtras.forEach(function(msg) {
+      html += '<div style="background:#fff0f0;border:1px solid #f5a0a0;color:#8a1e1e;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:6px;">❌ ' + msg + '</div>';
+    });
+  }
+
+  // Aviso de cupo lleno
+  if (total >= DISENIO_MAX_ARCH) {
+    html += '<div style="font-size:12px;color:#8a6d1e;background:#fffae6;border:1px solid #f0d98a;border-radius:8px;padding:8px 12px;margin-top:2px;">Límite de ' + DISENIO_MAX_ARCH + ' archivos alcanzado. Quita uno para agregar otro.</div>';
+  }
+
+  cont.innerHTML = html;
+}
+
+// ── Quitar un archivo por índice ──────────────────────────────────
+function quitarDisenioArchivo(idx) {
+  if (typeof idx === 'number') {
+    if (disenioArchivos[idx] && disenioArchivos[idx]._subiendo) {
+      disenioSubiendo = Math.max(0, disenioSubiendo - 1);
+    }
+    disenioArchivos.splice(idx, 1);
+  } else {
+    disenioArchivos = [];
+    disenioSubiendo = 0;
+  }
+  renderDisenioStatus();
+}
+</script>
 </body>
 </html>
