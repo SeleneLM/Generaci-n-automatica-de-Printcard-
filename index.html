@@ -399,7 +399,12 @@ image-slot { display:block; background:#eef0f4; border-radius:6px; border:1.5px 
   font-weight: 700;
 }
 .chip-pendiente {
-  background: #fff4e0;
+  background: #fdecea;
+  color: #b71c1c;
+  border: 1px solid #ef9a9a;
+}
+.chip-en-proceso {
+  background: #fff8e1;
   color: #b36f00;
   border: 1px solid #f5c46a;
 }
@@ -740,6 +745,7 @@ image-slot { display:block; background:#eef0f4; border-radius:6px; border:1.5px 
           <option>Alfredo Najar</option>
           <option>Alma Patiño</option>
           <option>Araceli de Alba</option>
+          <option>Antonio de Nova</option>
           <option>Armando Ayala</option>
           <option>Asiel Vázquez</option>
           <option>Carlos Ramírez</option>
@@ -1223,7 +1229,7 @@ function toggleColorLibre(sel){
 
 function markFilled(el) { /* visual helper - no requerida */ }
 
-const PANTONE_OPCIONES = ['Cyan','Magenta','Amarillo','Negro','Blanco','Reflex','185C (rojo)','187C (rojo)','485C (rojo)','483C (café)','072C (azul)','3005C (azul)','123C (amarillo)','Otro (escribir)'];
+const PANTONE_OPCIONES = ['Cyan','Magenta','Amarillo','Negro','Blanco','Reflex','Barniz','185C (rojo)','187C (rojo)','485C (rojo)','483C (café)','072C (azul)','3005C (azul)','123C (amarillo)','Otro (escribir)'];
 
 function agregarTinta(listId){
   const list = document.getElementById(listId);
@@ -1914,12 +1920,13 @@ function renderCapturas(capturas) {
     return;
   }
   tbody.innerHTML = capturas.map(function(c) {
-    const esRevisado = c.estado === 'Revisado';
-    const chipClass = esRevisado ? 'chip-aprobado' : 'chip-pendiente';
-    const chipLabel = esRevisado ? '✓ Revisado' : '● Pendiente';
+    const estado = c.estado || 'Pendiente';
+    const chipClass = estado === 'Enviado / Listo' ? 'chip-aprobado' : (estado === 'En proceso' ? 'chip-en-proceso' : 'chip-pendiente');
+    const chipLabel = estado === 'Enviado / Listo' ? '✓ Enviado / Listo' : (estado === 'En proceso' ? '◑ En proceso' : '● Pendiente');
     const btnRevisado = modoDisenador
-      ? '<button class="btn-accion ' + (esRevisado ? 'aprobar' : '') + '" onclick="toggleRevisado(\'' + c.id + '\', this)">' +
-        (esRevisado ? '↺ Pendiente' : '✓ Revisado') + '</button>'
+      ? '<button class="btn-accion" onclick="cambiarEstado(\'' + c.id + '\', \'' + estado + '\', this)">' +
+        (estado === 'Pendiente' ? '▶ En proceso' : (estado === 'En proceso' ? '✓ Enviado / Listo' : '↺ Pendiente')) + '</button>' +
+        '<button class="btn-accion" style="background:#fdecea;color:#b71c1c;" onclick="eliminarCaptura(\'' + c.id + '\', this)" title="Eliminar captura">🗑</button>'
       : '';
     const btnArchivos = '<button class="btn-archivos" onclick="verDisenioCaptura(\'' + c.id + '\')" title="Ver diseño adjunto">📂 Diseño</button>';
     return '<tr>' +
@@ -1940,22 +1947,30 @@ function renderCapturas(capturas) {
   }).join('');
 }
 
-// ── TOGGLE REVISADO (solo diseñadoras) ────────────────────────────
-async function toggleRevisado(id, btn) {
+// ── CAMBIAR ESTADO (solo diseñadoras) ────────────────────────────
+async function cambiarEstado(id, estadoActual, btn) {
   btn.disabled = true;
-  const textoOrig = btn.textContent;
   btn.textContent = '...';
+  const siguiente = estadoActual === 'Pendiente' ? 'En proceso' : (estadoActual === 'En proceso' ? 'Enviado / Listo' : 'Pendiente');
   try {
-    const docRef = db.collection('capturas').doc(id);
-    const snap = await docRef.get();
-    const actual = snap.exists ? snap.data().estado : 'Pendiente';
-    const nuevo = actual === 'Revisado' ? 'Pendiente' : 'Revisado';
-    await docRef.update({ estado: nuevo });
+    await db.collection('capturas').doc(id).update({ estado: siguiente });
     cargarCapturas();
   } catch(e) {
     alert('Error al actualizar estado: ' + e.message);
     btn.disabled = false;
-    btn.textContent = textoOrig;
+    btn.textContent = '▶ En proceso';
+  }
+}
+
+async function eliminarCaptura(id, btn) {
+  if (!confirm('¿Segura que deseas eliminar esta captura? Esta acción no se puede deshacer.')) return;
+  btn.disabled = true;
+  try {
+    await db.collection('capturas').doc(id).delete();
+    cargarCapturas();
+  } catch(e) {
+    alert('Error al eliminar: ' + e.message);
+    btn.disabled = false;
   }
 }
 
@@ -2188,6 +2203,7 @@ const CORREOS_ASESORES = {
   'Alfredo Najar': 'a.najar@zubex.com.mx',
   'Alma Patiño': 'a.patino@zubex.com.mx',
   'Araceli de Alba': 'aracelidealba32@gmail.com',
+  'Antonio de Nova': 'a.denova@zubex.com.mx',
   'Armando Ayala': 'aayala@mawmexicana.com',
   'Asiel Vázquez': 'avazquez@grofuder.com',
   'Carlos Ramírez': 'cramirez@mawmexicana.com',
@@ -2279,7 +2295,7 @@ function getCorreoAsesor() {
                   <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">CÓDIGO ÚNICO</div><div style="font-size:11px;font-weight:600;white-space:nowrap;">{{codigo_unico}}</div></div>
                   <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">CONSECUTIVO</div><div style="font-size:11px;font-weight:600;">{{consecutivo}}</div></div>
                   <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">ASESOR COMERCIAL</div><div style="font-size:11px;font-weight:600;">{{asesor}}</div></div>
-                  <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">ARTISTA</div><div style="font-size:11px;font-weight:600;">{{artista}}</div></div>
+                  <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">FECHA / ARTISTA</div><div style="font-size:11px;font-weight:600;">{{artista}}</div></div>
                   <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">ESCALA</div><div style="font-size:13px;font-weight:800;color:#060E9F;">50%</div></div>
                 </div>
               </div>
@@ -2405,7 +2421,7 @@ function getCorreoAsesor() {
                   <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">CÓDIGO ÚNICO</div><div style="font-size:11px;font-weight:600;white-space:nowrap;">{{codigo_unico}}</div></div>
                   <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">CONSECUTIVO</div><div style="font-size:11px;font-weight:600;">{{consecutivo}}</div></div>
                   <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">ASESOR COMERCIAL</div><div style="font-size:11px;font-weight:600;">{{asesor}}</div></div>
-                  <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">ARTISTA</div><div style="font-size:11px;font-weight:600;">{{artista}}</div></div>
+                  <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">FECHA / ARTISTA</div><div style="font-size:11px;font-weight:600;">{{artista}}</div></div>
                   <div><div style="font-size:8.5px;font-weight:700;letter-spacing:.5px;color:#060E9F;">ESCALA</div><div style="font-size:13px;font-weight:800;color:#060E9F;">50%</div></div>
                 </div>
               </div>
