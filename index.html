@@ -486,6 +486,7 @@ image-slot { display:block; background:#eef0f4; border-radius:6px; border:1.5px 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
 <style>
 /* ── ZONA DE CARGA DE ARCHIVOS ── */
 .upload-zone {
@@ -531,8 +532,7 @@ image-slot { display:block; background:#eef0f4; border-radius:6px; border:1.5px 
   height: 100%; background: var(--azul); border-radius: 4px;
   transition: width 0.3s;
 }
-/* ── MODAL DE DISEÑO ADJUNTO (Cloudinary) ── */
-.disenio-modal-grid img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid #d7dce5; cursor: pointer; }
+/* ── MODAL DE DISEÑO ADJUNTO (SharePoint) ── */
 .btn-archivos {
   background: #f0f5ff; border: 1px solid #c5d3f0; color: var(--azul);
   border-radius: 7px; padding: 5px 10px; font-size: 12px; cursor: pointer;
@@ -1094,8 +1094,9 @@ image-slot { display:block; background:#eef0f4; border-radius:6px; border:1.5px 
     <div class="card-body single">
       <div class="field">
         <label>Sube el archivo de diseño<span class="req">*</span></label>
+        <div id="disenio-sesion" style="font-size:12px;color:#6b7585;margin-bottom:8px;"></div>
         <input type="file" id="disenio-file-input" multiple onchange="onDisenioFileChange(event)">
-        <div class="hint">Acepta AI, PSD, PDF, JPG, PNG, TIFF, ZIP, etc. — hasta 5 archivos de 50 MB cada uno. Se suben automáticamente al elegirlos. No se puede generar el DataCard hasta que todos digan "listo".</div>
+        <div class="hint">Acepta AI, PSD, PDF, JPG, PNG, TIFF, ZIP, etc. (hasta 5 archivos de 50 MB cada uno). Se suben automáticamente al elegirlos, a una carpeta privada de SharePoint de Zubex. Se te pedirá iniciar sesión con tu cuenta de Microsoft. No se puede generar el DataCard hasta que todos digan "listo".</div>
         <div id="disenio-status" style="margin-top:8px;"></div>
       </div>
     </div>
@@ -1112,9 +1113,9 @@ image-slot { display:block; background:#eef0f4; border-radius:6px; border:1.5px 
 <div id="disenio-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(16,37,84,0.6);z-index:9000;align-items:center;justify-content:center;" onclick="cerrarModalDisenio()">
   <div style="background:#fff;border-radius:14px;padding:26px 28px;max-width:480px;width:90%;max-height:80vh;overflow-y:auto;" onclick="event.stopPropagation()">
     <h3 style="margin:0 0 14px;color:#102554;font-size:17px;">📂 Diseño adjunto</h3>
-    <div id="disenio-modal-grid" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;"></div>
+    <div id="disenio-modal-grid" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;"></div>
     <p id="disenio-modal-vacio" style="display:none;font-size:13px;color:#6b7585;margin:0 0 16px;"></p>
-    <a id="disenio-modal-link" href="#" target="_blank" rel="noopener" style="display:none;box-sizing:border-box;width:100%;text-align:center;background:#1b3a7a;color:#fff;padding:10px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;margin-bottom:10px;">📎 Descargar diseño</a>
+    <a id="disenio-modal-link" href="#" target="_blank" rel="noopener" style="display:none;box-sizing:border-box;width:100%;text-align:center;background:#1b3a7a;color:#fff;padding:10px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;margin-bottom:10px;">📎 Abrir diseño</a>
     <button style="width:100%;padding:12px;border-radius:8px;background:#1b3a7a;color:#fff;border:none;font-weight:600;cursor:pointer;" onclick="cerrarModalDisenio()">Cerrar</button>
   </div>
 </div>
@@ -1489,10 +1490,9 @@ function construirDataPrintCard() {
     hist_cambio_1:  tipoTrabajo || 'N/A',
     hist_fecha_1:   fecha,
     hist_cambio_2:  '', hist_fecha_2: '',
-    disenio_archivos: disenioArchivos.slice(),
-    disenio_url:     disenioArchivos.length > 0 ? disenioArchivos[0].secure_url  : '',
-    disenio_nombre:  disenioArchivos.length > 0 ? disenioArchivos[0].nombre      : '',
-    disenio_preview: disenioArchivos.length > 0 ? disenioArchivos[0].preview_url : '',
+    disenio_archivos: disenioArchivos.map(function(a){ return { url: a.url, nombre: a.nombre, bytes: a.bytes }; }),
+    disenio_url:     disenioArchivos.length > 0 ? disenioArchivos[0].url    : '',
+    disenio_nombre:  disenioArchivos.length > 0 ? disenioArchivos[0].nombre : '',
   };
 }
 
@@ -1650,20 +1650,19 @@ async function descargarPrintCard() {
 
 // ─── HELPER ARCHIVO DE DISEÑO EN DATACARD ────────────────────────
 function htmlArchivoDisenio(data) {
-  const archivos = data.disenio_archivos && data.disenio_archivos.length
+  const btn = 'display:inline-block;font-size:10px;font-weight:700;color:#fff;background:#1b3a7a;padding:6px 12px;border-radius:6px;text-decoration:none;margin:0 6px 6px 0;';
+  const lista = (data.disenio_archivos && data.disenio_archivos.length)
     ? data.disenio_archivos
-    : (data.disenio_url ? [{ secure_url: data.disenio_url, nombre: data.disenio_nombre || 'diseño', preview_url: data.disenio_preview }] : []);
-  if (!archivos.length) {
-    return '<span style="font-size:9px;color:#bbb;font-style:italic">Sin archivo de diseño</span>';
+    : (data.disenio_url ? [{ url: data.disenio_url, nombre: data.disenio_nombre }] : []);
+  if (lista.length) {
+    return lista.map(function(a) {
+      return '<a href="' + a.url + '" target="_blank" rel="noopener" style="' + btn + '">📎 Abrir ' + (a.nombre || 'diseño') + ' (SharePoint)</a>';
+    }).join('');
   }
-  return archivos.map(function(a) {
-    return '<div style="margin-bottom:8px;">'
-      + '<a href="'+a.secure_url+'" target="_blank" rel="noopener" style="display:inline-block;font-size:10px;font-weight:700;color:#fff;background:#1b3a7a;padding:6px 12px;border-radius:6px;text-decoration:none;">📎 Descargar '+(a.nombre||'diseño')+'</a>'
-      + (a.preview_url
-          ? '<div style="margin-top:6px;"><img src="'+a.preview_url+'" style="max-width:120px;max-height:120px;object-fit:contain;border-radius:6px;border:1px solid #d7dce5"></div>'
-          : '')
-      + '</div>';
-  }).join('');
+  if (data.link_drive) {
+    return '<a href="' + data.link_drive + '" target="_blank" rel="noopener" style="' + btn + '">🗂️ Ver carpeta de diseño en OneDrive</a>';
+  }
+  return '<span style="font-size:9px;color:#bbb;font-style:italic">Sin archivo de diseño</span>';
 }
 
 // ─── GENERADOR DE DATACARD HTML ──────────────────────────────────
@@ -1802,10 +1801,10 @@ async function validarYGenerarApp() {
     }
   });
 
-  if (disenioArchivos.length === 0) {
-    faltantes.push('Archivo de diseño — sube al menos un archivo antes de generar');
-  } else if (disenioSubiendo > 0) {
-    faltantes.push('Archivo de diseño — espera a que termine(n) de subir (aparece "listo" en cada uno)');
+  if (disenioSubiendoCount() > 0) {
+    faltantes.push('Archivo de diseño — espera a que terminen de subirse todos los archivos');
+  } else if (!disenioArchivos.length) {
+    faltantes.push('Archivo de diseño — sube al menos un archivo antes de generar (espera a que diga "listo")');
   }
 
   if (faltantes.length > 0) {
@@ -1876,6 +1875,7 @@ function desactivarModoDisenador() {
 // ── PANTALLA DE INICIO ─────────────────────────────────────────────
 function irANuevaCaptura() {
   mostrarPantalla('screen-formulario');
+  resetDisenio();
 }
 
 function mostrarBanner(msg, tipo) {
@@ -2146,10 +2146,9 @@ async function guardarCapturaEnBackend(data) {
         estado:          'Pendiente',
         folio:           data.folio || '',
         creado_en:       firebase.firestore.FieldValue.serverTimestamp(),
-        disenio_archivos: disenioArchivos.slice(),
-        disenio_url:     disenioArchivos.length > 0 ? disenioArchivos[0].secure_url  : '',
-        disenio_nombre:  disenioArchivos.length > 0 ? disenioArchivos[0].nombre      : '',
-        disenio_preview: disenioArchivos.length > 0 ? disenioArchivos[0].preview_url : '',
+        disenio_archivos: disenioArchivos.map(function(a){ return { url: a.url, nombre: a.nombre, bytes: a.bytes }; }),
+        disenio_url:     disenioArchivos.length > 0 ? disenioArchivos[0].url    : '',
+        disenio_nombre:  disenioArchivos.length > 0 ? disenioArchivos[0].nombre : '',
       })
     );
     console.log('Captura guardada en Firestore:', id);
@@ -2158,7 +2157,7 @@ async function guardarCapturaEnBackend(data) {
   }
 }
 
-// ── MODAL DE DISEÑO ADJUNTO (Cloudinary) ──────────────────────────
+// ── MODAL DE DISEÑO ADJUNTO (SharePoint) ──────────────────────────
 async function verDisenioCaptura(id) {
   const modal = document.getElementById('disenio-modal-overlay');
   const grid = document.getElementById('disenio-modal-grid');
@@ -2172,17 +2171,17 @@ async function verDisenioCaptura(id) {
     const snap = await db.collection('capturas').doc(id).get();
     if (!snap.exists) { vacio.textContent = 'Captura no encontrada en Firestore.'; vacio.style.display = 'block'; return; }
     const data = snap.data();
-    const archivos = data.disenio_archivos && data.disenio_archivos.length
+    const lista = (data.disenio_archivos && data.disenio_archivos.length)
       ? data.disenio_archivos
-      : (data.disenio_url ? [{ secure_url: data.disenio_url, nombre: data.disenio_nombre || 'diseño', preview_url: data.disenio_preview }] : []);
-    if (archivos.length) {
-      linkBtn.style.display = 'none'; // Se reemplaza por botones por archivo
-      grid.innerHTML = archivos.map(function(a, i) {
-        return '<div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #f0f3f8;">'
-          + (a.preview_url ? '<img src="'+a.preview_url+'" onerror="this.style.display=\'none\'" onclick="window.open(\''+a.secure_url+'\',\'_blank\')" title="Abrir en grande" style="max-width:120px;max-height:120px;object-fit:contain;border-radius:8px;border:1px solid #d7dce5;cursor:pointer;">' : '')
-          + '<a href="'+a.secure_url+'" target="_blank" rel="noopener" style="display:inline-block;background:#1b3a7a;color:#fff;padding:7px 14px;border-radius:7px;font-size:13px;font-weight:600;text-decoration:none;">📎 Descargar '+(a.nombre||'diseño')+'</a>'
-          + '</div>';
+      : (data.disenio_url ? [{ url: data.disenio_url, nombre: data.disenio_nombre }] : []);
+    if (lista.length) {
+      grid.innerHTML = lista.map(function(a) {
+        return '<a href="' + a.url + '" target="_blank" rel="noopener" style="display:block;box-sizing:border-box;width:100%;text-align:center;background:#1b3a7a;color:#fff;padding:10px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">📎 Abrir ' + (a.nombre || 'diseño') + ' (SharePoint)</a>';
       }).join('');
+    } else if (data.link_drive) {
+      linkBtn.href = data.link_drive;
+      linkBtn.textContent = '🗂️ Abrir carpeta en OneDrive (captura anterior)';
+      linkBtn.style.display = 'inline-block';
     } else {
       vacio.textContent = 'Esta captura no tiene diseño adjunto.';
       vacio.style.display = 'block';
@@ -2540,183 +2539,252 @@ function getCorreoAsesor() {
   </div>
 </div>
 <script>
-// ─── CLOUDINARY — SUBIDA DE ARCHIVO DE DISEÑO ────────────────────
-const CLOUDINARY_CLOUD_NAME    = 'snq6pvhf';
-const CLOUDINARY_UPLOAD_PRESET = 'printcard_disenos';
-const DISENIO_MAX_MB   = 50;
-const DISENIO_MAX_ARCH = 5;
+// ── CONFIGURACIÓN ENTRA ID / SHAREPOINT ──────────────────────────
+const ENTRA_CLIENT_ID    = '820674a3-41e2-4147-9d96-6c81b5427001';
+const ENTRA_TENANT_ID    = '7a3d29b2-b6e1-42e8-adce-ff1c62216890';
+const ENTRA_REDIRECT_URI = 'https://selenelm.github.io/Generaci-n-automatica-de-Printcard-/';
+const GRAPH_SCOPES       = ['User.Read', 'Files.ReadWrite.All'];
+const SP_HOST            = 'zubexcommx.sharepoint.com';
+const SP_SITE_PATH       = '/sites/MejoraContinuaMC';
+const SP_CARPETA         = 'Diseños Preprensa';
+const SP_SUBCARPETA_POR_ASESOR = false;
+const DISENIO_MAX_MB       = 50;
+const DISENIO_MAX_ARCHIVOS = 5;
+const UPLOAD_CHUNK         = 15 * 327680; // ~4.7 MB; debe ser múltiplo de 320 KiB
 
-let disenioArchivos = []; // [{ secure_url, nombre, bytes, preview_url }, ...]
-let disenioSubiendo  = 0; // cuántos uploads están en curso
+let msalApp = null, msalCuenta = null, spSiteId = null;
 
-// ── Entrada del usuario: puede elegir varios archivos a la vez ─────
-function onDisenioFileChange(event) {
-  const files = Array.from(event.target.files || []);
-  if (!files.length) return;
-
-  const espacioLibre = DISENIO_MAX_ARCH - disenioArchivos.length - disenioSubiendo;
-  if (espacioLibre <= 0) {
-    renderDisenioStatus();
-    return;
-  }
-  const aSubir = files.slice(0, espacioLibre);
-  const ignorados = files.length - aSubir.length;
-
-  let errores = [];
-  aSubir.forEach(function(file) {
-    if (file.size > DISENIO_MAX_MB * 1024 * 1024) {
-      errores.push('"' + file.name + '" pesa ' + (file.size/1024/1024).toFixed(1) + ' MB (máx ' + DISENIO_MAX_MB + ' MB)');
-    } else {
-      disenioSubiendo++;
-      subirDisenioACloudinary(file);
-    }
+function initMsal() {
+  if (msalApp) return msalApp;
+  if (typeof msal === 'undefined') throw new Error('No cargó la librería de inicio de sesión de Microsoft. Revisa tu conexión y recarga la página.');
+  msalApp = new msal.PublicClientApplication({
+    auth: {
+      clientId: ENTRA_CLIENT_ID,
+      authority: 'https://login.microsoftonline.com/' + ENTRA_TENANT_ID,
+      redirectUri: ENTRA_REDIRECT_URI
+    },
+    cache: { cacheLocation: 'sessionStorage' }
   });
+  const cuentas = msalApp.getAllAccounts();
+  if (cuentas.length) { msalCuenta = cuentas[0]; msalApp.setActiveAccount(msalCuenta); }
+  return msalApp;
+}
 
-  if (errores.length) {
-    // Mostrar errores sin borrar los que ya están subiendo/subidos
-    renderDisenioStatus(errores);
+async function loginMicrosoft() {
+  const app = initMsal();
+  const r = await app.loginPopup({ scopes: GRAPH_SCOPES, prompt: 'select_account' });
+  msalCuenta = r.account;
+  app.setActiveAccount(r.account);
+  return r.account;
+}
+
+function logoutMicrosoft() {
+  const app = initMsal();
+  const cuenta = msalCuenta;
+  msalCuenta = null; spSiteId = null;
+  if (cuenta) return app.logoutPopup({ account: cuenta });
+}
+
+async function obtenerTokenGraph() {
+  const app = initMsal();
+  if (!msalCuenta) await loginMicrosoft();
+  try {
+    const r = await app.acquireTokenSilent({ scopes: GRAPH_SCOPES, account: msalCuenta });
+    return r.accessToken;
+  } catch (e) {
+    const r = await app.acquireTokenPopup({ scopes: GRAPH_SCOPES, account: msalCuenta });
+    return r.accessToken;
+  }
+}
+
+async function graphFetch(url, opts, token) {
+  const o = Object.assign({}, opts || {});
+  o.headers = Object.assign({ 'Authorization': 'Bearer ' + token }, o.headers || {});
+  const r = await fetch(url, o);
+  if (!r.ok) {
+    let msg = '';
+    try { const j = await r.json(); msg = (j.error && j.error.message) || ''; } catch (e) {}
+    const err = new Error(msg || ('Error ' + r.status));
+    err.status = r.status;
+    throw err;
+  }
+  return r.json();
+}
+
+async function obtenerSiteId(token) {
+  if (spSiteId) return spSiteId;
+  const j = await graphFetch('https://graph.microsoft.com/v1.0/sites/' + SP_HOST + ':' + SP_SITE_PATH, {}, token);
+  spSiteId = j.id;
+  return spSiteId;
+}
+
+function sanitizarNombreArchivo(n) {
+  return String(n).replace(/[\\/:*?"<>|#%~&{}]/g, '_').replace(/^\.+/, '_').trim().slice(0, 150) || 'archivo';
+}
+
+function sello() {
+  const d = new Date(), p = function (x) { return String(x).padStart(2, '0'); };
+  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
+}
+
+function mensajeErrorSubida(e) {
+  const code = e && (e.errorCode || e.code) || '';
+  const st = e && e.status;
+  if (/user_cancelled|popup_window_error|empty_window_error/i.test(code)) return 'Se canceló el inicio de sesión o el navegador bloqueó la ventana emergente. Permite las ventanas emergentes para esta página e inténtalo de nuevo.';
+  if (/consent_required|interaction_required|invalid_grant/i.test(code) || /AADSTS65001|AADSTS90094|AADSTS650057/.test(e.message || '')) return 'Tu cuenta no ha autorizado la aplicación. Si el mensaje de Microsoft pide aprobación de un administrador, avisa a TI.';
+  if (st === 401) return 'La sesión de Microsoft expiró. Inicia sesión de nuevo.';
+  if (st === 403) return 'Tu cuenta no tiene permiso para guardar en la carpeta de diseños. Avisa a Preprensa/TI.';
+  if (st === 404) return 'No se encontró la carpeta de diseños en SharePoint. Avisa a quien administra la app.';
+  return (e && e.message) || 'Error desconocido al subir el archivo.';
+}
+
+// Sube UN archivo a SharePoint con sesión de carga por partes (sirve para cualquier tamaño)
+async function subirArchivoASharePoint(file, onProgress) {
+  if (!file || !file.size) throw new Error('El archivo está vacío.');
+  const token = await obtenerTokenGraph();
+  const siteId = await obtenerSiteId(token);
+  const partes = SP_CARPETA.split('/').filter(Boolean);
+  if (SP_SUBCARPETA_POR_ASESOR && msalCuenta) partes.push(sanitizarNombreArchivo(msalCuenta.username));
+  partes.push(sello() + '_' + sanitizarNombreArchivo(file.name));
+  const ruta = partes.map(encodeURIComponent).join('/');
+  const sesion = await graphFetch(
+    'https://graph.microsoft.com/v1.0/sites/' + siteId + '/drive/root:/' + ruta + ':/createUploadSession',
+    { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item: { '@microsoft.graph.conflictBehavior': 'rename' } }) },
+    token
+  );
+  const total = file.size;
+  let inicio = 0, resultado = null;
+  while (inicio < total) {
+    const fin = Math.min(inicio + UPLOAD_CHUNK, total);
+    const r = await fetch(sesion.uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Range': 'bytes ' + inicio + '-' + (fin - 1) + '/' + total },
+      body: file.slice(inicio, fin)
+    });
+    if (!r.ok) { const err = new Error('Falló la subida (código ' + r.status + ').'); err.status = r.status; throw err; }
+    if (r.status === 200 || r.status === 201) resultado = await r.json();
+    inicio = fin;
+    if (onProgress) onProgress(Math.round(inicio / total * 100));
+  }
+  if (!resultado || !resultado.webUrl) throw new Error('SharePoint no confirmó el archivo guardado.');
+  return { url: resultado.webUrl, nombre: resultado.name, bytes: total, id: resultado.id };
+}
+
+// ── INTERFAZ: lista de archivos, sesión y estados ─────────────────
+let disenioArchivos = [];   // [{ url, nombre, bytes, id }]
+let disenioEnProceso = {};  // { clave: { nombre, pct } }
+let disenioErrores = [];    // mensajes de error recientes
+
+function actualizarSesionUI() {
+  const el = document.getElementById('disenio-sesion');
+  if (!el) return;
+  if (msalCuenta) {
+    el.innerHTML = '🔐 Sesión: <strong>' + msalCuenta.username + '</strong> · <a href="#" onclick="cambiarCuentaMicrosoft();return false;" style="color:inherit;">Cambiar cuenta</a>';
   } else {
-    renderDisenioStatus();
+    el.innerHTML = '🔐 Sesión de Microsoft: no iniciada · <a href="#" onclick="iniciarSesionManual();return false;" style="color:inherit;">Iniciar sesión</a> (también se pedirá al elegir el archivo)';
   }
-  event.target.value = ''; // Permitir re-elegir el mismo archivo si se quita
 }
 
-// ── Sube UN archivo y agrega al arreglo al completar ──────────────
-function subirDisenioACloudinary(file) {
-  const placeholder = { nombre: file.name, bytes: file.size, _subiendo: true, _pct: 0 };
-  disenioArchivos.push(placeholder);
-  renderDisenioStatus();
+async function iniciarSesionManual() {
+  try { await loginMicrosoft(); } catch (e) { disenioErrores = [mensajeErrorSubida(e)]; }
+  actualizarSesionUI(); renderDisenioEstado();
+}
 
-  const xhr = new XMLHttpRequest();
-  const url = 'https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD_NAME + '/auto/upload';
-  const form = new FormData();
-  form.append('file', file);
-  form.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+async function cambiarCuentaMicrosoft() {
+  try { msalCuenta = null; spSiteId = null; await loginMicrosoft(); } catch (e) { disenioErrores = [mensajeErrorSubida(e)]; }
+  actualizarSesionUI(); renderDisenioEstado();
+}
 
-  xhr.upload.addEventListener('progress', function(e) {
-    if (e.lengthComputable) {
-      placeholder._pct = Math.round((e.loaded / e.total) * 100);
-      renderDisenioStatus();
+function disenioSubiendoCount() { return Object.keys(disenioEnProceso).length; }
+
+async function onDisenioFileChange(event) {
+  let archivos = Array.from(event.target.files || []);
+  event.target.value = '';
+  if (!archivos.length) return;
+  disenioErrores = [];
+  if (disenioArchivos.length + disenioSubiendoCount() + archivos.length > DISENIO_MAX_ARCHIVOS) {
+    disenioErrores.push('❌ Máximo ' + DISENIO_MAX_ARCHIVOS + ' archivos por captura.');
+    renderDisenioEstado(); return;
+  }
+  archivos = archivos.filter(function (f) {
+    if (f.size > DISENIO_MAX_MB * 1024 * 1024) {
+      disenioErrores.push('❌ "' + f.name + '" pesa ' + (f.size / 1024 / 1024).toFixed(1) + ' MB — el máximo es ' + DISENIO_MAX_MB + ' MB.');
+      return false;
     }
+    return true;
   });
-
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState !== 4) return;
-    disenioSubiendo = Math.max(0, disenioSubiendo - 1);
-    const idx = disenioArchivos.indexOf(placeholder);
-    if (xhr.status >= 200 && xhr.status < 300) {
-      let resp;
-      try { resp = JSON.parse(xhr.responseText); } catch(e2) { resp = null; }
-      if (resp && resp.secure_url) {
-        const esPreviable = /\.(psd|ai|pdf|eps|tif|tiff)$/i.test(resp.secure_url);
-        const entrada = {
-          secure_url:  resp.secure_url,
-          nombre:      file.name,
-          bytes:       resp.bytes || file.size,
-          preview_url: esPreviable ? resp.secure_url.replace(/\.\w+$/, '.jpg') : resp.secure_url,
-        };
-        if (idx !== -1) disenioArchivos[idx] = entrada;
-      } else {
-        let errMsg = 'Respuesta inesperada de Cloudinary.';
-        if (resp && resp.error) {
-          if (resp.error.code === 401 || resp.error.message === 'Untrusted File Access') {
-            errMsg = 'ZIP bloqueado por Cloudinary. Pide a Selene que active "Allow raw uploads" en el preset printcard_disenos del panel de Cloudinary, o comprime los archivos en otro formato.';
-          } else {
-            errMsg = resp.error.message || errMsg;
-          }
-        }
-        if (idx !== -1) { placeholder._error = errMsg; placeholder._subiendo = false; }
-      }
-    } else {
-      let msg = 'Error ' + xhr.status;
-      try { const err = JSON.parse(xhr.responseText); if (err && err.error && err.error.message) msg = err.error.message; } catch(e2) {}
-      if (idx !== -1) { placeholder._error = msg; placeholder._subiendo = false; }
-    }
-    renderDisenioStatus();
-  };
-
-  xhr.onerror = function() {
-    disenioSubiendo = Math.max(0, disenioSubiendo - 1);
-    const idx = disenioArchivos.indexOf(placeholder);
-    if (idx !== -1) { placeholder._error = 'Sin conexión con Cloudinary.'; placeholder._subiendo = false; }
-    renderDisenioStatus();
-  };
-
-  xhr.open('POST', url, true);
-  xhr.send(form);
+  if (!archivos.length) { renderDisenioEstado(); return; }
+  // Iniciar sesión primero (dentro del gesto del usuario, para que el navegador no bloquee la ventana)
+  try { if (!msalCuenta) await loginMicrosoft(); }
+  catch (e) { disenioErrores.push('❌ ' + mensajeErrorSubida(e)); renderDisenioEstado(); return; }
+  actualizarSesionUI();
+  await Promise.all(archivos.map(subirUnDisenio));
 }
 
-// ── Renderiza el bloque de estado completo ────────────────────────
-function renderDisenioStatus(erroresExtras) {
+async function subirUnDisenio(file) {
+  const clave = Date.now() + '_' + Math.random().toString(36).slice(2) + '_' + file.name;
+  disenioEnProceso[clave] = { nombre: file.name, pct: 0 };
+  renderDisenioEstado();
+  try {
+    const r = await subirArchivoASharePoint(file, function (pct) {
+      if (disenioEnProceso[clave]) { disenioEnProceso[clave].pct = pct; renderDisenioEstado(); }
+    });
+    disenioArchivos.push(r);
+  } catch (e) {
+    disenioErrores.push('❌ "' + file.name + '": ' + mensajeErrorSubida(e));
+  } finally {
+    delete disenioEnProceso[clave];
+    renderDisenioEstado();
+  }
+}
+
+function mostrarEstadoDisenio(tipo, mensajeHtml) {
+  const colores = {
+    subiendo: { bg: '#eaf0fb', border: '#b9cef0', color: '#1b3a7a' },
+    ok:       { bg: '#e6f4ed', border: '#84d4a8', color: '#1e5c35' },
+    error:    { bg: '#fff0f0', border: '#f5a0a0', color: '#8a1e1e' }
+  };
+  const c = colores[tipo] || colores.subiendo;
+  return '<div style="background:' + c.bg + ';border:1px solid ' + c.border + ';color:' + c.color +
+    ';border-radius:8px;padding:8px 12px;font-size:13px;margin-bottom:6px;">' + mensajeHtml + '</div>';
+}
+
+function renderDisenioEstado() {
   const cont = document.getElementById('disenio-status');
   if (!cont) return;
-
   let html = '';
-
-  // Contador de cupos
-  const total = disenioArchivos.length;
-  const subiendo = disenioArchivos.filter(function(a){ return a._subiendo; }).length;
-  const listos   = disenioArchivos.filter(function(a){ return !a._subiendo && !a._error; }).length;
-
-  if (total > 0) {
-    html += '<div style="font-size:12px;color:#6b7585;margin-bottom:6px;">'
-      + listos + ' listo(s) · ' + subiendo + ' subiendo · ' + (DISENIO_MAX_ARCH - total) + ' cupo(s) libre(s)</div>';
-  }
-
-  // Fila por cada archivo
-  disenioArchivos.forEach(function(a, i) {
-    const kb = (a.bytes/1024).toFixed(0);
-    if (a._subiendo) {
-      html += '<div style="display:flex;align-items:center;gap:10px;background:#eaf0fb;border:1px solid #b9cef0;color:#1b3a7a;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:6px;">'
-        + '⏳ <strong>' + a.nombre + '</strong> — subiendo ' + a._pct + '%'
-        + '</div>';
-    } else if (a._error) {
-      html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff0f0;border:1px solid #f5a0a0;color:#8a1e1e;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:6px;">'
-        + '<span>❌ <strong>' + a.nombre + '</strong> — ' + a._error + '</span>'
-        + '<button type="button" onclick="quitarDisenioArchivo('+i+')" style="border:none;background:none;color:#8a1e1e;text-decoration:underline;cursor:pointer;font-size:12px;white-space:nowrap;flex-shrink:0;">Quitar</button>'
-        + '</div>';
-    } else {
-      html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:#e6f4ed;border:1px solid #84d4a8;color:#1e5c35;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:6px;">'
-        + '<div style="display:flex;align-items:center;gap:8px;min-width:0;">'
-        + (a.preview_url ? '<img src="'+a.preview_url+'" onerror="this.style.display=\'none\'" style="width:36px;height:36px;object-fit:contain;border-radius:5px;border:1px solid #c5e8d4;flex-shrink:0;">' : '')
-        + '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">✅ <strong>'+a.nombre+'</strong> ('+kb+' KB)</span>'
-        + '</div>'
-        + '<div style="display:flex;gap:8px;flex-shrink:0;">'
-        + '<a href="'+a.secure_url+'" target="_blank" rel="noopener" style="color:#1e5c35;text-decoration:underline;font-size:12px;">Ver</a>'
-        + '<button type="button" onclick="quitarDisenioArchivo('+i+')" style="border:none;background:none;color:#1e5c35;text-decoration:underline;cursor:pointer;font-size:12px;padding:0;">Quitar</button>'
-        + '</div>'
-        + '</div>';
-    }
+  Object.keys(disenioEnProceso).forEach(function (k) {
+    const f = disenioEnProceso[k];
+    html += mostrarEstadoDisenio('subiendo', '⏳ Subiendo "' + f.nombre + '"... ' + f.pct + '%');
   });
-
-  // Errores de tamaño / cupo
-  if (erroresExtras && erroresExtras.length) {
-    erroresExtras.forEach(function(msg) {
-      html += '<div style="background:#fff0f0;border:1px solid #f5a0a0;color:#8a1e1e;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:6px;">❌ ' + msg + '</div>';
-    });
-  }
-
-  // Aviso de cupo lleno
-  if (total >= DISENIO_MAX_ARCH) {
-    html += '<div style="font-size:12px;color:#8a6d1e;background:#fffae6;border:1px solid #f0d98a;border-radius:8px;padding:8px 12px;margin-top:2px;">Límite de ' + DISENIO_MAX_ARCH + ' archivos alcanzado. Quita uno para agregar otro.</div>';
-  }
-
+  disenioArchivos.forEach(function (a, i) {
+    html += mostrarEstadoDisenio('ok',
+      '✅ <strong>' + a.nombre + '</strong> (' + (a.bytes / 1024).toFixed(0) + ' KB) — guardado en SharePoint, listo. ' +
+      '<button type="button" onclick="quitarDisenioArchivo(' + i + ')" style="border:none;background:none;color:inherit;text-decoration:underline;cursor:pointer;font-size:13px;padding:0;">Quitar de esta captura</button>');
+  });
+  disenioErrores.forEach(function (m) { html += mostrarEstadoDisenio('error', m); });
   cont.innerHTML = html;
 }
 
-// ── Quitar un archivo por índice ──────────────────────────────────
-function quitarDisenioArchivo(idx) {
-  if (typeof idx === 'number') {
-    if (disenioArchivos[idx] && disenioArchivos[idx]._subiendo) {
-      disenioSubiendo = Math.max(0, disenioSubiendo - 1);
-    }
-    disenioArchivos.splice(idx, 1);
-  } else {
-    disenioArchivos = [];
-    disenioSubiendo = 0;
-  }
-  renderDisenioStatus();
+// "Quitar" solo lo desvincula de esta captura; el archivo permanece en SharePoint
+function quitarDisenioArchivo(i) {
+  disenioArchivos.splice(i, 1);
+  renderDisenioEstado();
 }
+
+function resetDisenio() {
+  disenioArchivos = []; disenioEnProceso = {}; disenioErrores = [];
+  const inp = document.getElementById('disenio-file-input');
+  if (inp) inp.value = '';
+  renderDisenioEstado();
+  actualizarSesionUI();
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  try { initMsal(); } catch (e) {}
+  actualizarSesionUI();
+});
 </script>
 </body>
 </html>
